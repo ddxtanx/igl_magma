@@ -1,0 +1,30 @@
+import "BasisCompute.mag":
+    Ker,
+    BasisCompute,
+    q2,
+    q4,
+    ComputeQ2Q4Basis;
+
+for i in [2 .. 50] do                       
+    ip := 2*i; // Weight needs to be even                            
+    ip_pad := pAdicRing(3) ! ip; // Cast this to be pAdic to use the Valuation func
+    ip_val := Valuation(ip_pad); // Compute valuation of the weight
+    ker := Ker(ip, pAdicRing(3)); // Compute the factors of the kernel
+    ker_val := [];
+    for val in ker do
+        if val ne 0 then // 0 will act weird, so we dont want to consider it
+            ker_val := Append(ker_val, Valuation(val)); // Add the valuation of the factor to the new list
+        end if;
+    end for;
+    // Now we get the maximum valuation of the nonzero kernel factors
+    max_val := 0; 
+    for val in ker_val do
+        if val gt max_val then
+            max_val := val;
+        end if;
+    end for;
+    if max_val gt (ip_val + 1) then // If the maximum valuation exceeds what is expected, log it.
+        2*i;
+        ker;
+    end if;
+end for;

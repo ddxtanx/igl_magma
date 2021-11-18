@@ -1,0 +1,41 @@
+// This file gathers the relations that we need to determine what
+// q2 and q4 are w.r.t to the canonical bases.
+R<a,b,c> := PolynomialRing(Rationals(), 3);
+S2 := BaseExtend(ModularForms(2,2), R);
+S4 := BaseExtend(ModularForms(2,4), R);
+
+Q<q> := PowerSeriesRing(Rationals());
+
+Del := DedekindEta(q)^24;
+
+E2 := S2.1;
+
+E4P := S4.1;
+EI4 := S4.2;
+E04 := E4P - 16*EI4;
+E4 := 256*EI4 + E04;
+
+E4PH := E4;
+EI4H := 1/16 * E04;
+E2H := -2*E2;
+
+q2 := a*E2;
+
+q4 := b*E4P + c*EI4;
+
+q4h := b*E4PH + c*EI4H;
+
+del := q4^2*(16*q2^2-64*q4);
+
+del;
+
+delp := qExpansion(del);
+"Correcting psi(q4)";
+q4h - (q2^2 - 4*q4)
+for i in [0 .. 2] do
+    IntegerToString(i) cat "-deg coefficients:";
+    "Delta:";
+    Coefficient(Del, i);
+    "Computed:";
+    Coefficient(q4h, i);
+end for;
