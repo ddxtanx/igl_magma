@@ -2,8 +2,12 @@ SetPath("/Applications/Magma/package/Geometry/ModFrm"); // To get access to oper
 import "operators.m":
     get_Wq; // Quick computations of atkin lehner operators
 
-Psi := function(form, wq) // Pass in wq for memoization
+Psi := function(form : wq := -1) // Pass in wq for memoization
     weight := Weight(form); // Get the weight
+    if wq eq -1 then
+        FS := BaseExtend(ModularForms(2, weight), Rationals());
+        wq :=  get_Wq(FS, 2);
+    end if;
     half_weight := Truncate(2^(weight/2)); // Prefactor is 2^(w/2)
     psi := half_weight * (form * wq); // Compute 2^(w/2) * AtkinLehner(form,2)
     return psi;
@@ -54,7 +58,7 @@ KernelMatrix := function(weight, ring)
     //"Computed Weight";
     //This computation of the dual basis takes the longest amount of time!
     wq := get_Wq(FormSpace, 2);
-    dual_basis := [ Psi(f, wq) : f in basis];
+    dual_basis := [ Psi(f : wq := wq) : f in basis];
     //dual_basis := [];
 
     //"Computed dual of the basis!";
@@ -126,9 +130,12 @@ KernelMatrix := function(weight, ring)
     return mat;
 end function;
 
-Ker := function(weight, ring)
+// This returns the basis for the Kernel at the given weight
+// i.e. a matrix s.t. the columns give the coefficients (in the 
+// Q2Q4 basis for the given weight) of the elements that span the kernel
+Ker := function(weight, ring) 
     mat := KernelMatrix(weight, ring);
-    S, _, _ := SmithForm(mat); // The smith form of the relation matrix gives a canonical way to view this kernel
+    S, P, Q := SmithForm(mat); // The smith form of the relation matrix gives a canonical way to view this kernel
     i := 1;
     diagElems := [];
     for row in RowSequence(S) do
@@ -136,7 +143,13 @@ Ker := function(weight, ring)
         diagElems := Append(diagElems, row[i]);
         i := i+1;
     end for;
-    return diagElems;
+    first0Index := 1;
+    while diagElems[first0Index] ne (ring ! 0) do
+        first0Index := 1 + first0Index;
+    end while;
+    qi := (Q^(-1));
+    dim := NumberOfRows(qi);
+    return Submatrix(qi, 1, first0Index, dim, (dim - first0Index+1));
 end function;
 
 //240G4 = c4
