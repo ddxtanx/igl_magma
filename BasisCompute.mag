@@ -193,7 +193,7 @@ KernelMatrix := function(weight, ring)
         mat_list := Append(mat_list, coefs);
     end for;
     mat := Matrix(mat_list);
-    return FactorMatrixRows(mat);
+    return ChangeRing(FactorMatrixRows(mat), ring);
 end function;
 
 // This returns the basis for the Kernel at the given weight
@@ -204,36 +204,52 @@ Ker := function(weight, ring)
     mat := KernelMatrix(weight, ring);
     debugLog("KER: Computing SNF");
     S, P, Q := SmithForm(mat); // The smith form of the relation matrix gives a canonical way to view this kernel
+    // To find the kernel, we extract all of the columns of the Q matrix that
+    // Correspond to a zero invariant factor in the SNF matrix, which represents
+    // The basis matrix of the kernel
     i := 1;
     diagElems := [];
     debugLog("KER: Getting Diag Elems");
+    // The following parses the invariant factors into a nice list
     for row in RowSequence(S) do
         diagElem := row[i];
         diagElems := Append(diagElems, row[i]);
         i := i+1;
     end for;
     debugLog("KER: Getting nonzero vecs");
+    // Now it searches for the first index where the invariant factor is zero
     first0Index := 1;
-    while diagElems[first0Index] ne (ring ! 0) do
+    while diagElems[first0Index] ne 0 do
         first0Index := 1 + first0Index;
     end while;
-    qi := (Q);
-    qiScale := FactorMatrixCols(qi);
+    // We take out common factors to make the basis as simple as possible
+    qiScale := FactorMatrixCols(Q);
     debugLog("KER: Returning submatrix");
     dim := NumberOfRows(qiScale);
+    // We extract the columns corresponding to zero invariant factors
     submat := Submatrix(qiScale, 1, first0Index, dim, (dim - first0Index+1));
+    // We take the column-echelon which 
+    // TODO: Check this does not introduce 3-adic denominators
+    // ensures that the basis returned is linearly independent.
+    submatT := Transpose(EchelonForm(Transpose(submat)));
+    submat := submatT;
+    // We get the basis that submat is w.r.t
     basis := ComputeQ2Q4Basis(weight);
     kernel_basis := [];
+    const_terms := [];
+    // We now combine the kernel basis with the canonical basis to get 
+    // the basis of forms for the kernel
     for i in [1 .. NumberOfColumns(submat)] do
         ithCol := ColumnSubmatrix(submat, i, 1);
-        sum := basis[1] - basis[1];
+        form := basis[1] - basis[1];
+        const_term := 0;
         for j in [1 .. NumberOfRows(ithCol)] do
-            sum := sum + basis[j]*ithCol[j][1];
+            form := form + basis[j]*ithCol[j][1];
+            const_term := const_term + ithCol[j][1];
         end for;
-        Append(~kernel_basis, sum);
+        Append(~kernel_basis, form);
+        Append(~const_terms, const_term);
     end for;
-    return kernel_basis;
+    // We return the matrix basis as well as the basis of modular forms
+    return submat, kernel_basis;
 end function;
-
-
-//240G4 = c4

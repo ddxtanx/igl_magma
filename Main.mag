@@ -6,4 +6,16 @@ import "BasisCompute.mag":
     ComputeQ2Q4Basis, 
     Psi,
     get_Wq;
-
+str := "";
+for weight in [4 .. 100 by 2] do
+    m, ker := Ker(weight, pAdicRing(3));
+    dim := #ker;
+    mod_dim := #Basis(ModularForms(1,weight));
+    if dim ne mod_dim then
+        "At weight " cat IntegerToString(weight) cat " dims are different!";
+        "Kernel dimension: " cat IntegerToString(dim);
+        "Modular Form Space Dim " cat IntegerToString(mod_dim);
+    end if;
+    str := str cat "," cat IntegerToString(dim);
+end for;
+str;
