@@ -58,14 +58,22 @@ end function;
 Psi := function(form : wq := -1) // Pass in wq for memoization
     debugLog("PSI: getting weight");
     weight := Weight(form); // Get the weight
+    psi := Parent(form) ! 0;
+    FS := BaseExtend(Parent(form), Rationals());
     if wq eq -1 then
-    debugLog("PSI: getting wq");
-        FS := BaseExtend(ModularForms(2, weight), Rationals());
+        debugLog("PSI: getting wq");
         wq :=  get_Wq(FS, 2);
     end if;
-    half_weight := Truncate(2^(weight/2)); // Prefactor is 2^(w/2)
-    debugLog("PSI: computing psi");
-    psi := half_weight * (form * wq); // Compute 2^(w/2) * AtkinLehner(form,2)
+    if (Sprint(BaseRing(form))) ne "Rational Field" then
+        _, i1 := BaseExtend(Parent(form), Rationals());
+        _, i2 := BaseExtend(FS, BaseRing(form));
+        half_weight := Truncate(2^(weight/2)); // Prefactor is 2^(w/2)
+        debugLog("PSI: computing psi");
+        psi := half_weight * i2(i1(form) * wq); // Compute 2^(w/2) * AtkinLehner(form,2)
+    else
+        half_weight := Truncate(2^(weight/2));
+        psi := half_weight * (form * wq);
+    end if;
     return psi;
 end function;
 
@@ -106,7 +114,7 @@ ComputeQ2Q4Basis := function(weight)
 end function;
 
 // This computes the relations matrix for something to be in the kernel of (psis - 1 + phif)
-KernelMatrix := function(weight, ring)
+KernelMatrix := function(weight, ring : wq := -1)
     //"Computed M_" cat IntegerToString(weight) cat "(Gamma_0(2)) Space";
     FormSpace := BaseExtend(ModularForms(2,weight), Rationals());
     debugLog("KERMAT: Computing basis");
@@ -120,7 +128,9 @@ KernelMatrix := function(weight, ring)
     //"Computed Weight";
     //This computation of the dual basis takes the longest amount of time!
     debugLog("KERMAT: Getting WQ");
-    wq := get_Wq(FormSpace, 2);
+    if wq eq -1 then
+        wq := get_Wq(FormSpace, 2);
+    end if;
     debugLog("KERMAT: Computing dual basis");
     dual_basis := [ Psi(f : wq := wq) : f in basis];
     //dual_basis := [];
@@ -199,9 +209,9 @@ end function;
 // This returns the basis for the Kernel at the given weight
 // i.e. a matrix s.t. the columns give the coefficients (in the 
 // Q2Q4 basis for the given weight) of the elements that span the kernel
-Ker := function(weight, ring) 
+Ker := function(weight, ring : wq := -1) 
     debugLog("KER: Computing Kernel Matrix");
-    mat := KernelMatrix(weight, ring);
+    mat := KernelMatrix(weight, ring : wq := wq);
     debugLog("KER: Computing SNF");
     S, P, Q := SmithForm(mat); // The smith form of the relation matrix gives a canonical way to view this kernel
     // To find the kernel, we extract all of the columns of the Q matrix that
@@ -234,6 +244,8 @@ Ker := function(weight, ring)
     submat := submatT;
     // We get the basis that submat is w.r.t
     basis := ComputeQ2Q4Basis(weight);
+    RFS, phi := BaseExtend(Parent(basis[1]), ring);
+    basis := [phi(f) : f in basis];
     kernel_basis := [];
     const_terms := [];
     // We now combine the kernel basis with the canonical basis to get 
@@ -250,5 +262,16 @@ Ker := function(weight, ring)
         Append(~const_terms, const_term);
     end for;
     // We return the matrix basis as well as the basis of modular forms
-    return submat, kernel_basis;
+    return kernel_basis;
+end function;
+
+IsModular := function(f : wq := -1)
+    weight := Weight(f);
+    fh := 2^(-weight) * Psi(f : wq := wq);
+    for i in [1 .. Precision(Parent(f))/2] do
+        if Coefficient(f, i) ne Coefficient(fh, 2*i) then
+            return false;
+        end if;
+    end for;
+    return true;
 end function;

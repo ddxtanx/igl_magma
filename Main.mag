@@ -1,3 +1,8 @@
+SetPath("/Applications/Magma/package/Geometry/ModFrm"); // To get access to operators.m
+import "operators.m":
+    get_Wq; // "Quick" computations of atkin lehner operators
+            // It's actually slow af, if we can speed this up that would be
+            // super great!
 import "BasisCompute.mag":
     Ker,
     KernelMatrix,
@@ -5,21 +10,27 @@ import "BasisCompute.mag":
     q4,
     ComputeQ2Q4Basis, 
     Psi,
-    get_Wq;
+    IsModular;
 str := "";
 for weight in [4 .. 100 by 2] do
-    m, ker := Ker(weight, pAdicRing(3));
+    wq := get_Wq(ModularForms(2, weight), 2);
+    ker := Ker(weight, pAdicRing(3) : wq := wq);
+    are_modular := [IsModular(Psi(f : wq := wq) + f : wq := wq) : f in ker];
+    all_modular := true;
+    for bool in are_modular do
+        all_modular := all_modular and bool;
+    end for;
+    if not all_modular then
+        "Not all forms at weight " cat IntegerToString(weight) cat " are modular";
+    end if;
     dim := #ker;
     mod_dim := #Basis(ModularForms(1,weight));
-    vals := [Valuation(v) : v in Eltseq(m)];
-    if Minimum(vals) lt 0 then
-        "Division by 3 occurs at weight " cat IntegerToString(weight);
-    end if;
     if dim ne mod_dim then
         "At weight " cat IntegerToString(weight) cat " dims are different!";
         "Kernel dimension: " cat IntegerToString(dim);
         "Modular Form Space Dim " cat IntegerToString(mod_dim);
     end if;
     str := str cat "," cat IntegerToString(dim);
+    "Completed weight " cat IntegerToString(weight) cat ".";
 end for;
 str;
