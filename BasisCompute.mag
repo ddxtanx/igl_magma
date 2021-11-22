@@ -223,13 +223,12 @@ Ker := function(weight, ring)
         first0Index := 1 + first0Index;
     end while;
     // We take out common factors to make the basis as simple as possible
-    qiScale := FactorMatrixCols(Q);
+    qiScale := ChangeRing(FactorMatrixCols(Q), ring);
     debugLog("KER: Returning submatrix");
     dim := NumberOfRows(qiScale);
     // We extract the columns corresponding to zero invariant factors
     submat := Submatrix(qiScale, 1, first0Index, dim, (dim - first0Index+1));
-    // We take the column-echelon which 
-    // TODO: Check this does not introduce 3-adic denominators
+    // We take the column-echelon form of the basis matrix which 
     // ensures that the basis returned is linearly independent.
     submatT := Transpose(EchelonForm(Transpose(submat)));
     submat := submatT;

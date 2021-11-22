@@ -11,6 +11,10 @@ for weight in [4 .. 100 by 2] do
     m, ker := Ker(weight, pAdicRing(3));
     dim := #ker;
     mod_dim := #Basis(ModularForms(1,weight));
+    vals := [Valuation(v) : v in Eltseq(m)];
+    if Minimum(vals) lt 0 then
+        "Division by 3 occurs at weight " cat IntegerToString(weight);
+    end if;
     if dim ne mod_dim then
         "At weight " cat IntegerToString(weight) cat " dims are different!";
         "Kernel dimension: " cat IntegerToString(dim);
