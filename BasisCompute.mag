@@ -244,8 +244,10 @@ Ker := function(weight, ring : wq := -1)
     submat := submatT;
     // We get the basis that submat is w.r.t
     basis := ComputeQ2Q4Basis(weight);
-    RFS, phi := BaseExtend(Parent(basis[1]), ring);
-    basis := [phi(f) : f in basis];
+    if Sprint(BaseRing(basis[1])) ne Sprint(ring) then
+        RFS, phi := BaseExtend(Parent(basis[1]), ring);
+        basis := [phi(f) : f in basis];
+    end if;
     kernel_basis := [];
     const_terms := [];
     // We now combine the kernel basis with the canonical basis to get 
