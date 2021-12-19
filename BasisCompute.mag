@@ -23,6 +23,9 @@ FactorMatrixCols := function(mat)
         colElemList := [(Integers() ! v) : v in colElemList];
         gcd := Gcd(colElemList);
         val := Valuation(threeAdics ! gcd);
+        if val gt 0 then
+            "We have 3 torsion!";
+        end if;
         gcd := gcd / (3^val);
         Append(~scale_list, 1/gcd);
     end for;
@@ -254,7 +257,7 @@ Ker := function(weight, ring : wq := -1)
     // the basis of forms for the kernel
     for i in [1 .. NumberOfColumns(submat)] do
         ithCol := ColumnSubmatrix(submat, i, 1);
-        form := basis[1] - basis[1];
+        form := (Parent(basis[1]) ! 0); 
         const_term := 0;
         for j in [1 .. NumberOfRows(ithCol)] do
             form := form + basis[j]*ithCol[j][1];
@@ -277,3 +280,6 @@ IsModular := function(f : wq := -1)
     end for;
     return true;
 end function;
+
+//c4 = 16*(q2^2 - 3 q4) = E4!!!
+//c6 = -64q2^3 +9*32*q2*q4 = 32*(q2*q4-2*q2^3) = E6!!!
