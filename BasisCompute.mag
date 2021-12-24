@@ -55,6 +55,23 @@ FactorMatrixRows := function(mat)
     return scale_mat*mat;
 end function;
 
+EnsureNoColDivByThree := function(matrix)
+    scale_list := [];
+    threeAdics := pAdicRing(3);
+    for i in [1 .. NumberOfColumns(matrix)] do 
+        ithCol := ColumnSubmatrix(matrix, i, 1);
+        colElemList := Eltseq(ithCol);
+        denomElemList := [Denominator(v) : v in colElemList];
+        gcd := Lcm(denomElemList);
+        val := Valuation(threeAdics ! gcd);
+        Append(~scale_list, 3^val);
+    end for;
+    scale_mat := DiagonalMatrix(Rationals(), scale_list);
+    debugLog(matrix);
+    debugLog(matrix*scale_mat);
+    return matrix*scale_mat;
+end function;
+
 // Computes psi(f) for a given modular form
 // If the wq matrix is pre-computed, there is an
 // optional option for it to be passed in
@@ -116,6 +133,33 @@ ComputeQ2Q4Basis := function(weight)
     return basis;
 end function;
 
+c4 := 16*(q2^2 - 3*q4);
+c6 := 32*(9*q2*q4-2*q2^3);
+
+ComputeC4C6Basis := function(weight)
+    basis := [];
+    fourth := Truncate(weight/4); // c4's powers range from 0 to floor(weight / 4)
+    sixth := Truncate(weight/6); // Computing c6's power requires access to 1/6
+    debugLog("COMPUTE: Beginning loop");
+    for i in [0 .. fourth] do
+        fac_1 := 1;
+        fac_2 := 1;
+        if i ne 0 then // We need these if statements because MAGMA is weird about f^0
+            fac_1 := c4^i;
+        end if;
+        if ((weight - 4*i) mod 6 eq 0) and (weight ne 4*i) then
+            fac_2 := c6^(Truncate((weight-4*i)/6));
+        end if;
+        debugLog("COMPUTE: Multiplying forms");
+        form := fac_1 * fac_2;
+        if Type(form) eq ModFrmElt and Weight(form) eq weight then
+            smallestCoef := LeadingCoefficient(qExpansion(form));
+            formScaled := (1/smallestCoef) * form;
+            basis := Append(basis, formScaled);
+        end if;
+    end for;
+    return basis;
+end function;
 // This computes the relations matrix for something to be in the kernel of (psis - 1 + phif)
 KernelMatrix := function(weight, ring : wq := -1)
     //"Computed M_" cat IntegerToString(weight) cat "(Gamma_0(2)) Space";
@@ -244,7 +288,7 @@ Ker := function(weight, ring : wq := -1)
     // We take the column-echelon form of the basis matrix which 
     // ensures that the basis returned is linearly independent.
     submatT := Transpose(EchelonForm(Transpose(submat)));
-    submat := submatT;
+    submat := EnsureNoColDivByThree(submatT); //Its nicer to work over Rationals and just forbid division by 3.
     // We get the basis that submat is w.r.t
     basis := ComputeQ2Q4Basis(weight);
     if Sprint(BaseRing(basis[1])) ne Sprint(ring) then
@@ -263,6 +307,13 @@ Ker := function(weight, ring : wq := -1)
             form := form + basis[j]*ithCol[j][1];
             const_term := const_term + ithCol[j][1];
         end for;
+        // There's a nice congruence that all of the forms in 
+        // the q2q4 basis have their non-constant terms divisible by 4
+        // so if the constant term of the form is divisible by 4
+        // then the whole modular form is divisible by 4
+        if Numerator(const_term) mod 4 eq 0 then
+            form := 1/4 * form;
+        end if;
         Append(~kernel_basis, form);
         Append(~const_terms, const_term);
     end for;
@@ -272,14 +323,44 @@ end function;
 
 IsModular := function(f : wq := -1)
     weight := Weight(f);
-    fh := 2^(-weight) * Psi(f : wq := wq);
+    fh_almost := Psi(f : wq := wq); // No factor of 2^-weight cuz converting to rationals is annoying
     for i in [1 .. Precision(Parent(f))/2] do
-        if Coefficient(f, i) ne Coefficient(fh, 2*i) then
+        if 2^weight*Coefficient(f, i) ne Coefficient(fh_almost, 2*i) then
             return false;
         end if;
     end for;
     return true;
 end function;
 
+HomotopyGroupOrder := function(n)
+    if n mod 8 in [0,1] then
+        return 2;
+    elif n mod 8 in [2,4,5,6] then
+        return 0;
+    else
+        return Denominator(BernoulliNumber(2*n)/4*n);
+    end if;
+end function;
 //c4 = 16*(q2^2 - 3 q4) = E4!!!
-//c6 = -64q2^3 +9*32*q2*q4 = 32*(q2*q4-2*q2^3) = E6!!!
+//c6 = -64q2^3 +9*32*q2*q4 = 32*(9*q2*q4-2*q2^3) = E6!!!
+
+PsiDP1Inv := function(f)
+    scale := 1/(2^(Weight(f))-1);           
+    return scale * (Psi(f)-f);
+end function;
+
+TwistMult := function(f,g)
+    if Type(f) ne ModFrmElt and Type(g) ne ModFrmElt then
+        return f*g;
+    elif Type(f) ne ModFrmElt then
+        return 1/2*(f*g+PsiDP1Inv(f*g+Psi(g)*f));
+    elif Type(g) ne ModFrmElt then
+        return 1/2* (f*g+PsiDP1Inv(Psi(f)*g+f*g));
+    else
+        return 1/2*(f*g + PsiDP1Inv(Psi(f)*g+Psi(g)*f));
+    end if;
+end function;
+
+InKer := function(f)
+    return IsModular(Psi(f)+f);
+end function;

@@ -9,6 +9,7 @@ import "BasisCompute.mag":
     q2,
     q4,
     ComputeQ2Q4Basis, 
+    ComputeC4C6Basis,
     Psi,
     IsModular;
 str := "";
