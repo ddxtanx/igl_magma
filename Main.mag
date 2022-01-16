@@ -8,15 +8,23 @@ import "BasisCompute.mag":
     KernelMatrix,
     q2,
     q4,
+    c4,
+    c6,
     ComputeQ2Q4Basis, 
     ComputeC4C6Basis,
     Psi,
-    IsModular;
+    IsModular,
+    TwistMult,
+    PsiDP1Inv,
+    TwistMultPower,
+    InKer;
+c4tilde := PsiDP1Inv(c4);
+c6tilde := PsiDP1Inv(c6);
 str := "";
 for weight in [4 .. 100 by 2] do
     wq := get_Wq(ModularForms(2, weight), 2);
     ker := Ker(weight, pAdicRing(3) : wq := wq);
-    are_modular := [IsModular(Psi(f : wq := wq) + f : wq := wq) : f in ker];
+    are_modular := [InKer(f : wq := wq): f in ker];
     all_modular := true;
     for bool in are_modular do
         all_modular := all_modular and bool;
@@ -34,4 +42,20 @@ for weight in [4 .. 100 by 2] do
     str := str cat "," cat IntegerToString(dim);
     "Completed weight " cat IntegerToString(weight) cat ".";
 end for;
+
+ for i in [0 .. 1000] do                                             
+     for j in [0 .. 10000] do                                             
+         coef := 240*i-504*j;                                              
+         weight := 4*i+6*j;                                                
+         coefVal := Valuation(pAdicRing(3) ! coef);                        
+            weightVal := Valuation(pAdicRing(3) ! weight);                    
+         if weightVal + 1 gt coefVal then                                  
+             "3 Div at " cat IntegerToString(i) cat "," cat IntegerToString(j);
+             break;
+         end if;                                                           
+    end for;                                                          
+end for;
+
+
 str;
+
