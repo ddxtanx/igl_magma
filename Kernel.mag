@@ -21,8 +21,8 @@ import "ModularForms.mag":
     c4,
     c6,
     IsModular,
-    PsiDP1Inv;
-
+    PsiDP1Inv,
+    NormalizeForm;
 
 // This computes the relations matrix for something to be in the kernel of (psis - 1 + phif)
 KernelMatrix := function(weight, ring : wq := -1)
@@ -151,8 +151,10 @@ Ker := function(weight, ring : wq := -1)
     submat := Submatrix(qiScale, 1, first0Index, dim, (dim - first0Index+1));
     // We take the column-echelon form of the basis matrix which 
     // ensures that the basis returned is linearly independent.
+    R := loc<Integers() | 3>;
+    submat := ChangeRing(submat, R);
     submatT := Transpose(EchelonForm(Transpose(submat)));
-    submat := EnsureNoColDivByThree(submatT, ring); //Its nicer to work over Rationals and just forbid division by 3.
+    submat := ChangeRing(submat, ring);
     // We get the basis that submat is w.r.t
     debugLog("KER: Computing Q2Q4 Basis");
     basis := ComputeQ2Q4Basis(weight);
@@ -160,46 +162,47 @@ Ker := function(weight, ring : wq := -1)
         RFS, phi := BaseExtend(Parent(basis[1]), ring);
         basis := [phi(f) : f in basis];
     end if;
-    kernel_basis := [];
-    const_terms := [];
-    // We now combine the kernel basis with the canonical basis to get 
-    // the basis of forms for the kernel
-    debugLog("KER: Expanding Ker Computation");
-    for i in [1 .. NumberOfColumns(submat)] do
-        ithCol := ColumnSubmatrix(submat, i, 1);
-        form := (Parent(basis[1]) ! 0); 
-        const_term := 0;
-        debugLog("KER: Adding forms");
-        for j in [1 .. NumberOfRows(ithCol)] do
-            form := form + basis[j]*ithCol[j][1];
-            const_term := const_term + ithCol[j][1];
-        end for;
-        // There's a nice congruence that all of the forms in 
-        // the q2q4 basis have their non-constant terms divisible by 4
-        // so if the constant term of the form is divisible by 4
-        // then the whole modular form is divisible by 4
-        if Numerator(Rationals() ! const_term) mod 4 eq 0 then
-            form := 1/4 * form;
-        end if;
-        if form eq (Parent(form) ! 0) then
-            continue;
-        end if;
-        Append(~kernel_basis, form);
-        Append(~const_terms, const_term);
-    end for;
-    // We return the matrix basis as well as the basis of modular forms
-    debugLog("KER: Computing linearly independent subset");
-    debugLog("KER: Computing COB");
-    M := ChangeOfBasis(basis, kernel_basis);
-    debugLog("KER: Computing Echelon form");
-    EF := EchelonForm(M);
-    actual_basis := [];
-    for n in [1 .. NumberOfRows(EF)] do
-        if NumberOfNonZeroEntries(RowSubmatrix(EF, n, 1)) ne 0 then
-            Append(~actual_basis, kernel_basis[n]);
-        end if;
-    end for;
-    return actual_basis;
+    kernel_basis := TransformBasis(Transpose(submat), basis);
+    // const_terms := [];
+    // // We now combine the kernel basis with the canonical basis to get 
+    // // the basis of forms for the kernel
+    // debugLog("KER: Expanding Ker Computation");
+    // for i in [1 .. NumberOfColumns(submat)] do
+    //     ithCol := ColumnSubmatrix(submat, i, 1);
+    //     form := (Parent(basis[1]) ! 0); 
+    //     const_term := 0;
+    //     debugLog("KER: Adding forms");
+    //     for j in [1 .. NumberOfRows(ithCol)] do
+    //         form := form + basis[j]*ithCol[j][1];
+    //         const_term := const_term + ithCol[j][1];
+    //     end for;
+    //     // There's a nice congruence that all of the forms in 
+    //     // the q2q4 basis have their non-constant terms divisible by 4
+    //     // so if the constant term of the form is divisible by 4
+    //     // then the whole modular form is divisible by 4
+    //     if Numerator(Rationals() ! const_term) mod 4 eq 0 then
+    //         form := 1/4 * form;
+    //     end if;
+    //     if form eq (Parent(form) ! 0) then
+    //         continue;
+    //     end if;
+    //     Append(~kernel_basis, form);
+    //     Append(~const_terms, const_term);
+    // end for;
+    // // We return the matrix basis as well as the basis of modular forms
+    // // debugLog("KER: Computing linearly independent subset");
+    // // debugLog("KER: Computing COB");
+    // // M := ChangeOfBasis(basis, kernel_basis);
+    // // debugLog("KER: Computing Echelon form");
+    // // EF := EchelonForm(M);
+    // // actual_basis := [];
+    // // for n in [1 .. NumberOfRows(EF)] do
+    // //     if NumberOfNonZeroEntries(RowSubmatrix(EF, n, 1)) ne 0 then
+    // //         Append(~actual_basis, kernel_basis[n]);
+    // //     end if;
+    // // end for;
+    kernel_basis := [NormalizeForm(f) : f in kernel_basis];
+    return kernel_basis;
 end function;
 
 //c4 = 16*(q2^2 - 3 q4) = E4!!!

@@ -9,15 +9,14 @@ BasisExpand := function(form, basis)
     vec_elems := [];
     for i in [1 .. num_basis] do
         for j in [1 .. num_basis] do
-            basis_form := basis[j];
-
+            basis_form := basis[i];
             debugLog("BE: Getting coefficient of basis elt");
-            coef := Coefficient(basis_form, i-1);
+            coef := Coefficient(basis_form, j-1);
             debugLog("BE: Got Coefficient of basis elt");
-            mat_elems := Append(mat_elems, coef);
+            Append(~mat_elems, coef);
         end for;
         debugLog("BE: Getting coefficient of form");
-        vec_elems := Append(vec_elems, Coefficient(form, i-1));
+        Append(~vec_elems, Coefficient(form, i-1));
         debugLog("BE: Got coefficeint of form");
     end for;
     debugLog("BE: Constructing Matrix");
@@ -25,7 +24,7 @@ BasisExpand := function(form, basis)
     debugLog("BE: Constructing Vec");
     vec := Matrix(ring, num_basis, 1, vec_elems);
     debugLog("BE: Computing Soln");
-    soln, _ := Solution(Transpose(mat), Transpose(vec));
+    soln, _ := Solution(mat, Transpose(vec));
     return Transpose(soln);
 end function;
 

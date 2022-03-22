@@ -35,7 +35,7 @@ c6tilde := PsiDP1Inv(c6);
 str := "";
 for weight in [4 .. 100 by 2] do
     wq := get_Wq(ModularForms(2, weight), 2);
-    ker := Ker(weight, pAdicRing(3) : wq := wq);
+    ker := Ker(weight, Rationals());
     are_modular := [InKer(f : wq := wq): f in ker];
     all_modular := true;
     for bool in are_modular do
@@ -236,10 +236,5 @@ for w in [4 .. 500 by 2] do
     "Kernel Basis";
     new_b1 := [PsiDP1Inv(f: wq := wq) : f in new_b1_modular];
     new_b1;
-    "-";
-    new_psid_appl := [Psi(f : wq := wq) + f : f in new_b1];
-    new_cob := ChangeOfBasis(new_b1, b1);
-    "Refined COB matrix from modified basis to whole basis";
-    new_cob;
     "---";
 end for;
