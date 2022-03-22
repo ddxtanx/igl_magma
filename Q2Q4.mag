@@ -31,11 +31,14 @@ del;
 
 delp := qExpansion(del);
 "Correcting psi(q4)";
-q4h - (q2^2 - 4*q4)
-for i in [0 .. 2] do
+differ := q4h - (q2^2 - 4*q4);
+for i in [0 .. 3] do
     IntegerToString(i) cat "-deg coefficients:";
     "Delta:";
     Coefficient(Del, i);
     "Computed:";
-    Coefficient(q4h, i);
+    Coefficient(del, i);
+    "--";
+    "Diff:";
+    Coefficient(differ, i);
 end for;

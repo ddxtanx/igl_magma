@@ -3,20 +3,32 @@ import "operators.m":
     get_Wq; // "Quick" computations of atkin lehner operators
             // It's actually slow af, if we can speed this up that would be
             // super great!
-import "BasisCompute.mag":
-    Ker,
-    KernelMatrix,
+import "ModularFormLinearAlgebra.mag":
+    BasisExpand,
+    ChangeOfBasis,
+    TransformBasis;
+
+import "Helpers.mag":
+    FactorMatrixCols,
+    FactorMatrixRows,
+    EnsureNoColDivByThree;
+
+import "ModularForms.mag":
+    Psi,
+    ComputeC4C6Basis,
+    ComputeQ2Q4Basis,
     q2,
     q4,
+    Delta,
     c4,
     c6,
-    ComputeQ2Q4Basis, 
-    ComputeC4C6Basis,
-    Psi,
     IsModular,
-    TwistMult,
-    PsiDP1Inv,
-    TwistMultPower,
+    PsiDP1Inv;
+
+import "Kernel.mag":
+    Ker,
+    KernelMatrix,
+    KernelSubBasis,
     InKer;
 c4tilde := PsiDP1Inv(c4);
 c6tilde := PsiDP1Inv(c6);
@@ -58,4 +70,172 @@ end for;
 
 
 str;
+n := 500;
+cijs := [];
+nonzeros := [];
+for j in [0 .. n] do
+    subList := [];
+    for i in [0 .. n] do
 
+        c4Power := 1;
+        c6Power := 1;
+        if i gt 0 then
+            c4Power := c4^i;
+        end if;
+        if j gt 0 then
+            c6Power := c6^j;
+        end if;
+        if i eq 0 and j eq 0 then
+            subList := Append(subList, 0);
+            continue;
+        end if;
+        form := c4Power * c6Power;
+        coefs := Coefficients(qExpansion(form));     
+        coefs := [Integers() ! coef : coef in coefs];  
+                                                                                                                                                        
+        numCoefs := #coefs;      
+        coefs := coefs[[2..numCoefs]]; 
+        gcf := GCD(coefs);
+        threeDivCoefs := Valuation(pAdicRing(3) ! gcf);
+        expectedDiv := Valuation(pAdicRing(3) ! (4*i +6*j)) + 1;
+        divDiff := expectedDiv - threeDivCoefs;
+        if divDiff ne 0 then
+            nonzeros := Append(nonzeros, [i,j,divDiff]);
+        end if;
+        subList := Append(subList, divDiff);
+    end for;
+    cijs := Append(cijs, subList);
+end for;
+
+badWeights := [];
+for w in [270 .. (10*n-2) by 2] do
+    if Valuation(pAdicRing(3) ! w) lt 3 then
+        continue;
+    end if;
+    str := "Weight: " cat IntegerToString(w) cat "; Vals: ";
+    forms := ComputeC4C6Basis(w);
+    i := 0;
+    for form in forms do
+        coefs := [Integers() ! Coefficient(form, i) : i in [1 .. 20]];
+        gcd := GCD(coefs);
+        formVal := Valuation(pAdicRing(3) ! gcd);
+        iVal := Valuation(pAdicRing(3) ! i) + 2;
+        formVal - iVal;
+        expectedVal := Valuation(pAdicRing(3) ! w) +1;
+        valDiff := expectedVal-formVal;
+        if valDiff gt 0 then
+            badWeights := Append(badWeights, w);
+        end if;
+        char := "";
+        if i gt 0 then
+            char := ",";
+        end if;
+        str := str cat char cat IntegerToString(valDiff);
+        i := i + 1;
+    end for;
+    str;
+end for; 
+
+str;
+n := 500;
+cijs := [];
+nonzeros := [];
+for j in [1 .. n] do
+    subList := [];
+    for i in [1 .. n] do
+        // if (4*i + 6*j) mod 54 ne 0 then
+        //     continue;
+        // end if; 
+        c4Power := 1;
+        c6Power := 1;
+        if i gt 0 then
+            c4Power := c4^i;
+        end if;
+        if j gt 0 then
+            c6Power := c6^j;
+        end if;
+        if i eq 0 and j eq 0 then
+            subList := Append(subList, 0);
+            continue;
+        end if;
+        form := c4Power * c6Power;
+        coefs := Coefficients(qExpansion(form));     
+        coefs := [Integers() ! coef : coef in coefs];  
+                                                                                                                                                        
+        numCoefs := #coefs;      
+        coefs := coefs[[2..numCoefs]]; 
+        gcf := GCD(coefs);
+        threeDivCoefs := Valuation(pAdicRing(3) ! gcf);
+        iDiv := Valuation(pAdicRing(3) ! i) + 2;
+        expectedDiv := Valuation(pAdicRing(3) ! (4*i +6*j)) + 1;
+
+        conjectureDiv := Minimum([iDiv, expectedDiv]);
+        if threeDivCoefs ne conjectureDiv then
+            "i = " cat IntegerToString(i) cat ", j = " cat IntegerToString(j);
+            "Form div: " cat IntegerToString(threeDivCoefs) cat " conj Div: " cat IntegerToString(conjectureDiv);
+        end if;
+        
+        divDiff := expectedDiv - threeDivCoefs;
+        expectedDivDiff := Maximum([0, Valuation(pAdicRing(3) ! (4*i + 6*j)) - 1 - Valuation(pAdicRing(3) ! i)]); 
+        if divDiff ne expectedDivDiff then
+            "---";
+            divDiff;
+            expectedDivDiff; 
+            "---";
+        end if;
+        if divDiff ne 0 then
+            nonzeros := Append(nonzeros, [i,j,divDiff]);
+        end if;
+        subList := Append(subList, divDiff);
+    end for;
+    cijs := Append(cijs, subList);
+end for;
+
+for i in [2 .. 300] do
+    modSpace := ModularForms(2, 2*i);                               
+    eSeries := EisensteinSeries(modSpace);                                  
+    eSeries := eSeries[#eSeries];                                            
+    eSeries := (1/Coefficient(eSeries, 0)) * eSeries;                
+    inv := PsiDP1Inv(eSeries);                                            
+    vals := [Valuation( pAdicRing(3) ! (Denominator(Coefficient(inv, j)))) : j in [2 .. 50]];
+    minV := Minimum(vals);                                                
+    if minV ne 0 then                           
+        "At " cat IntegerToString(i);
+    else
+        "None at " cat IntegerToString(i);
+    end if;
+end for;
+
+for w in [4 .. 500 by 2] do
+    b1 := Ker(w, Rationals());
+    b2 := KernelSubBasis(w);
+
+    cob := ChangeOfBasis(b1, b2);
+    det := Determinant(cob);
+
+    Valuation(pAdicRing(3) ! Denominator(det));
+end for;
+
+
+for w in [4 .. 500 by 2] do
+    "Weight: " cat IntegerToString(w);
+    space := ModularForms(2, w);
+    wq := get_Wq(space, 2);
+    b1 := Ker(w, Rationals() : wq := wq);
+    psid_appl := [Psi(f : wq := wq) + f : f in b1];
+    
+    c4c6_basis := ComputeC4C6Basis(w);
+    cob := ChangeOfBasis(c4c6_basis, psid_appl);
+    psid_appl;
+    "---";
+    "COB Matrix from c4c6 to psid";
+    cob;
+    new_b1_modular := TransformBasis(cob, c4c6_basis);
+    new_b1 := [PsiDP1Inv(f: wq := wq) : f in new_b1_modular];
+    "-";
+    new_psid_appl := [Psi(f : wq := wq) + f : f in new_b1];
+    new_cob := ChangeOfBasis(new_b1, b1);
+    "Refined COB matrix from modified basis to whole basis";
+    new_cob;
+    "---";
+end for;

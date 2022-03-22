@@ -1,0 +1,59 @@
+debug := true;
+
+debugLog := procedure(str)
+    if debug then
+        str;
+    end if;
+end procedure;
+
+BasisExpand := function(form, basis)
+    ring := BaseRing(form);
+    num_basis := #basis;
+
+    mat_elems := [];
+    vec_elems := [];
+    for i in [1 .. num_basis] do
+        for j in [1 .. num_basis] do
+            basis_form := basis[j];
+
+            debugLog("BE: Getting coefficient");
+            coef := Coefficient(basis_form, i-1);
+            debugLog("BE: Got Coefficient");
+            mat_elems := Append(mat_elems, coef);
+        end for;
+        vec_elems := Append(vec_elems, Coefficient(form, i-1));
+    end for;
+    debugLog("BE: Constructing Matrix");
+    mat := Matrix(ring, num_basis, num_basis, mat_elems);
+    debugLog("BE: Constructing Vec");
+    vec := Matrix(ring, num_basis, 1, vec_elems);
+    debugLog("BE: Computing Soln");
+    soln, _ := Solution(Transpose(mat), Transpose(vec));
+    return Transpose(soln);
+end function;
+
+ChangeOfBasis := function(basis1, basis2)
+    vecs := [];
+    for form in basis2 do
+        cob := BasisExpand(form, basis1);
+        vecs := Append(vecs, cob);
+    end for;
+
+    mat := Matrix(vecs);
+    return mat;
+end function;
+
+TransformBasis := function(matrix, basis)
+    new_basis := [];
+
+    rows := NumberOfRows(matrix);
+    cols := NumberOfColumns(matrix);
+    for row_index in [1 .. rows] do
+        form := Parent(basis[1]) ! 0;
+        for col_index in [1 .. cols] do
+            form := form + matrix[row_index][col_index] * basis[col_index];
+        end for;
+        new_basis := Append(new_basis, form);
+    end for;
+    return new_basis;
+end function;
