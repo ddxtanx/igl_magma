@@ -2,16 +2,14 @@ import "/Applications/Magma/package/Geometry/ModFrm/operators.m":
     get_Wq; // "Quick" computations of atkin lehner operators
             // It's actually slow af, if we can speed this up that would be
             // super great!
-debug := true;
 import "ModularFormLinearAlgebra.mag":
     BasisExpand,
     ChangeOfBasis,
     TransformBasis;
 
 import "Helpers.mag":
-    FactorMatrixCols,
-    FactorMatrixRows,
-    EnsureNoColDivByThree;
+    EnsureNoColDivByThree,
+    debugLog;
 
 import "ModularForms.mag":
     Psi,
@@ -24,13 +22,6 @@ import "ModularForms.mag":
     c6,
     IsModular,
     PsiDP1Inv;
-
-// Logs debug output if debug mode is on
-debugLog := procedure(str)
-    if debug then
-        str;
-    end if;
-end procedure;
 
 
 // This computes the relations matrix for something to be in the kernel of (psis - 1 + phif)
@@ -123,7 +114,7 @@ KernelMatrix := function(weight, ring : wq := -1)
         mat_list := Append(mat_list, coefs);
     end for;
     mat := Matrix(mat_list);
-    return ChangeRing(FactorMatrixRows(mat), ring);
+    return mat;
 end function;
 
 // This returns the basis for the Kernel at the given weight
@@ -153,7 +144,7 @@ Ker := function(weight, ring : wq := -1)
         first0Index := 1 + first0Index;
     end while;
     // We take out common factors to make the basis as simple as possible
-    qiScale := ChangeRing(FactorMatrixCols(Q), ring);
+    qiScale := Q;
     debugLog("KER: Returning submatrix");
     dim := NumberOfRows(qiScale);
     // We extract the columns corresponding to zero invariant factors
@@ -219,10 +210,27 @@ InKer := function(f : wq := -1)
 end function;
 
 KernelSubBasis := function(weight : wq := -1)
+    if wq eq -1 then
+        space := ModularForms(2, weight);
+        wq := get_Wq(space, 2);
+    end if;
+    S2 := BaseExtend(ModularForms(2,2), Rationals());
+    E22 := S2.1;
+
+    S4 := BaseExtend(ModularForms(2,4), Rationals());
+    E4P := S4.1;
+    EI4 := S4.2;
+
+    q2 := 1/2 * E22;
+    q4 := 1/16*E4P - EI4;   
+
+    c4 := 16*(q2^2 - 3*q4);
+    c6 := 32*(9*q2*q4-2*q2^3);
+    Delta := q4^2 * (16*q2^2 - 64*q4);
     basis := [];
     fourth := Truncate(weight/4); // c4's powers range from 0 to floor(weight / 4)
     sixth := Truncate(weight/6); // Computing c6's power requires access to 1/6
-    debugLog("COMPUTE: Beginning loop");
+    debugLog("SubBasis: Beginning loop");
     for i in [0 .. fourth] do
         for j in [0 .. sixth] do
             pre_factor := 1;
@@ -245,7 +253,7 @@ KernelSubBasis := function(weight : wq := -1)
             if k ne 0 then
                 fac_3 := Delta^k;
             end if;
-            debugLog("COMPUTE: Multiplying forms");
+            debugLog("SubBasis: Multiplying forms");
             form := fac_1 * fac_2 * fac_3;
             smallestCoef := LeadingCoefficient(qExpansion(form));
             formScaled := (1/smallestCoef) * form;

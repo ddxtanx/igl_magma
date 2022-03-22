@@ -1,13 +1,8 @@
-debug := true;
-
-debugLog := procedure(str)
-    if debug then
-        str;
-    end if;
-end procedure;
+import "Helpers.mag":
+    debugLog;
 
 BasisExpand := function(form, basis)
-    ring := BaseRing(form);
+    ring := BaseRing(Parent(form));
     num_basis := #basis;
 
     mat_elems := [];
@@ -16,12 +11,14 @@ BasisExpand := function(form, basis)
         for j in [1 .. num_basis] do
             basis_form := basis[j];
 
-            debugLog("BE: Getting coefficient");
+            debugLog("BE: Getting coefficient of basis elt");
             coef := Coefficient(basis_form, i-1);
-            debugLog("BE: Got Coefficient");
+            debugLog("BE: Got Coefficient of basis elt");
             mat_elems := Append(mat_elems, coef);
         end for;
+        debugLog("BE: Getting coefficient of form");
         vec_elems := Append(vec_elems, Coefficient(form, i-1));
+        debugLog("BE: Got coefficeint of form");
     end for;
     debugLog("BE: Constructing Matrix");
     mat := Matrix(ring, num_basis, num_basis, mat_elems);

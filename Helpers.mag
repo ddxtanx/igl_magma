@@ -1,4 +1,4 @@
-debug := true;
+debug := false;
 
 debugLog := procedure(str)
     if debug then

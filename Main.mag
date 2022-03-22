@@ -231,7 +231,11 @@ for w in [4 .. 500 by 2] do
     "COB Matrix from c4c6 to psid";
     cob;
     new_b1_modular := TransformBasis(cob, c4c6_basis);
+    "Modular Basis";
+    new_b1_modular;
+    "Kernel Basis";
     new_b1 := [PsiDP1Inv(f: wq := wq) : f in new_b1_modular];
+    new_b1;
     "-";
     new_psid_appl := [Psi(f : wq := wq) + f : f in new_b1];
     new_cob := ChangeOfBasis(new_b1, b1);
