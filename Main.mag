@@ -25,11 +25,13 @@ import "ModularForms.mag":
     IsModular,
     PsiDP1Inv;
 
-import "Kernel.mag":
+import "Homology.mag":
     Ker,
     KernelMatrix,
     KernelSubBasis,
-    InKer;
+    InKer,
+    Homology,
+    ImageBasis;
 c4tilde := PsiDP1Inv(c4);
 c6tilde := PsiDP1Inv(c6);
 str := "";
@@ -237,4 +239,12 @@ for w in [4 .. 500 by 2] do
     new_b1 := [PsiDP1Inv(f: wq := wq) : f in new_b1_modular];
     new_b1;
     "---";
+end for;
+
+
+for w in [4 .. 500 by 2] do
+    space := ModularForms(2, w);
+    wq := get_Wq(space, 2);
+
+    "Homology at weight " cat IntegerToString(w) cat " is " cat Homology(w);
 end for;

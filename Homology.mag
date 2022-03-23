@@ -201,7 +201,6 @@ Ker := function(weight, ring : wq := -1)
     // //         Append(~actual_basis, kernel_basis[n]);
     // //     end if;
     // // end for;
-    kernel_basis := [NormalizeForm(f) : f in kernel_basis];
     return kernel_basis;
 end function;
 
@@ -275,3 +274,46 @@ KernelSubBasis := function(weight : wq := -1)
 end function;
 // Denom seq for c4tilde powers: 1, 17, 91, 4369, 1271, 13981
 
+ImageBasis := function(weight : wq := -1)
+    basis := ComputeC4C6Basis(weight);
+    power := Truncate(weight/2);
+    coef := 1;
+    psi_minus := [coef*(Psi(f : wq := wq) - f) : f in basis];
+    return psi_minus;
+end function;
+
+Homology := function(weight : wq := -1)
+    kerBasis := Ker(weight, pAdicRing(3) : wq := -1);
+    imBasis := ImageBasis(weight : wq := -1);
+
+    M := ChangeOfBasis(kerBasis, imBasis);
+     
+    R := pAdicRing(3);
+    M := ChangeRing(M, R);
+
+    S, _, _ := SmithForm(M);
+    S := ChangeRing(S, Rationals());
+
+    rows := NumberOfRows(S);
+    cols := NumberOfColumns(S);
+    min_dim := Minimum([rows, cols]);
+
+    orders := [S[i,i] : i in [1 .. min_dim]];
+    str := "";
+
+    for order in orders do
+        order_int := Truncate(order);
+        if order_int eq 0 then
+            str := str cat "Z x ";
+        elif order_int ne 1 then
+            str := str cat "Z/" cat IntegerToString(order_int) cat "Z x ";
+        end if;
+    end for;
+
+    if str eq "" then
+        return "{e}";
+    end if;
+
+    len := #str;
+    return str[1 .. len-3];
+end function;

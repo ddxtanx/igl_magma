@@ -2,7 +2,7 @@ import "Helpers.mag":
     debugLog;
 
 BasisExpand := function(form, basis)
-    ring := BaseRing(Parent(form));
+    ring := pAdicRing(3);
     num_basis := #basis;
 
     mat_elems := [];
@@ -23,7 +23,6 @@ BasisExpand := function(form, basis)
     mat := Matrix(ring, num_basis, num_basis, mat_elems);
     debugLog("BE: Constructing Vec");
     vec := Matrix(ring, num_basis, 1, vec_elems);
-    debugLog("BE: Computing Soln");
     soln, _ := Solution(mat, Transpose(vec));
     return Transpose(soln);
 end function;
