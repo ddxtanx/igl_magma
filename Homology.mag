@@ -281,7 +281,8 @@ ImageBasis := function(weight : wq := -1)
     coef := 1;
     debugLog("IMAGE: Computing Psi - 1 of basis");
     psi_minus := [coef*(Psi(f : wq := wq) - f) : f in basis];
-    return psi_minus;
+    psi2 := [(2^(weight) - 1) * form : form in basis];
+    return psi_minus, psi2;
 end function;
 
 Homology := function(weight)
@@ -290,41 +291,80 @@ Homology := function(weight)
     wq := get_Wq(space, 2);
     debugLog("HOMOLOGY: Calculating kernel basis");
     kerBasis := Ker(weight, pAdicRing(3) : wq := wq);
+    psidBasis := [];
+    for f in kerBasis do
+        Append(~psidBasis, Psi(f : wq := wq) + f);
+    end for;
 
     debugLog("HOMOLOGY: Calculating image basis");
-    imBasis := ImageBasis(weight : wq := wq);
+    imBasis1, imBasis2 := ImageBasis(weight : wq := wq);
+
 
     debugLog("HOMOLOGY: Calculating COB Matrix");
-    M := ChangeOfBasis(kerBasis, imBasis);
+    M1 := ChangeOfBasis(kerBasis, imBasis1);
+    M2 := ChangeOfBasis(psidBasis, imBasis2);
      
     R := pAdicRing(3);
-    M := ChangeRing(M, R);
+    M1 := ChangeRing(M1, R);
+    M2 := ChangeRing(M2, R);
 
     debugLog("HOMOLOGY: Calculating SNF of COB Mat");
-    S, _, _ := SmithForm(M);
-    S := ChangeRing(S, Rationals());
+    S1, _, _ := SmithForm(M1);
+    S1 := ChangeRing(S1, Rationals());
 
-    rows := NumberOfRows(S);
-    cols := NumberOfColumns(S);
-    min_dim := Minimum([rows, cols]);
+    S2, _, _ := SmithForm(M2);
+    S2 := ChangeRing(S2, Rationals());
 
-    orders := [S[i,i] : i in [1 .. min_dim]];
-    str := "";
+    rows1 := NumberOfRows(S1);
+    cols1 := NumberOfColumns(S1);
+    min_dim1 := Minimum([rows1, cols1]);
+
+    rows2 := NumberOfRows(S2);
+    cols2 := NumberOfColumns(S2);
+    min_dim2 := Minimum([rows2, cols2]);
+
+    orders1 := [S1[i,i] : i in [1 .. min_dim1]];
+    str1 := "";
+
+    orders2 := [S2[i,i] : i in [1 .. min_dim2]];
+    str2 := "";
 
     debugLog("HOMOLOGY: Parsing group orders");
-    for order in orders do
+    for order in orders1 do
         order_int := Truncate(order);
         if order_int eq 0 then
-            str := str cat "Z_3 x ";
+            str1 := str1 cat "Z_3 x ";
         elif order_int ne 1 then
-            str := str cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
+            str1 := str1 cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
         end if;
     end for;
 
-    if str eq "" then
-        return "{e}";
+    if str1 eq "" then
+        str1 := "{e}";
+    else
+        len1 := #str1;
+        str1 := str1[1 .. len1-3];
     end if;
 
-    len := #str;
-    return str[1 .. len-3];
+    str1 := "(" cat str1 cat ")";
+
+    for order in orders2 do
+        order_int := Truncate(order);
+        if order_int eq 0 then
+            str2 := str2 cat "Z_3 x ";
+        elif order_int ne 1 then
+            str2 := str2 cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
+        end if;
+    end for;
+
+    if str2 eq "" then
+        str2 := "{e}";
+    else
+        len2 := #str2;
+        str2 := str2[1 .. len2-3];
+    end if;
+
+    str2 := "(" cat str2 cat ")";
+
+    return str1 cat " x " cat str2;
 end function;
