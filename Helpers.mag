@@ -1,3 +1,6 @@
+import "ModularFormLinearAlgebra.mag":
+    TransformBasis;
+
 debug := false;
 
 debugLog := procedure(str)
@@ -7,12 +10,16 @@ debugLog := procedure(str)
 end procedure;
 
 
-SNFToOrdersAndBasis := function(snf, basis) 
+SNFToOrdersAndBasis := function(M, basis) 
+    S, P, Q := SmithForm(M);
     dim := #basis;
 
     orderAndBasis := [];
+
+    snfBasis := TransformBasis(Q, basis);
     for i in [1 .. dim] do
-        Append(~orderAndBasis, <snf[i,i], basis[i]>);
+    order := Truncate(Rationals() ! S[i,i]);
+        Append(~orderAndBasis, <order, snfBasis[i]>);
     end for;
 
     return orderAndBasis;

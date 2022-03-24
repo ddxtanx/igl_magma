@@ -323,8 +323,8 @@ Homology := function(weight)
     S2, _, _ := SmithForm(M2);
     S2 := ChangeRing(S2, Rationals());
 
-    l1 := SNFToOrdersAndBasis(S1, kerBasis);
-    l2 := SNFToOrdersAndBasis(S2, psidBasis);
+    l1 := SNFToOrdersAndBasis(M1, kerBasis);
+    l2 := SNFToOrdersAndBasis(M2, psidBasis);
     
     l1Filtered := [];
     l2Filtered := [];
