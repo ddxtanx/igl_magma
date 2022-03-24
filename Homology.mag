@@ -8,8 +8,8 @@ import "ModularFormLinearAlgebra.mag":
     TransformBasis;
 
 import "Helpers.mag":
-    EnsureNoColDivByThree,
-    debugLog;
+    debugLog,
+    SNFToOrdersAndBasis;
 
 import "ModularForms.mag":
     Psi,
@@ -285,6 +285,14 @@ ImageBasis := function(weight : wq := -1)
     return psi_minus, psi2;
 end function;
 
+
+// This function returns the homology group at a given weight w.
+// Parameters: weight, an even integer >= 4 representing the weight of the
+// forms we compute at.
+// Returns: A pair of two lists, each of which have elements of the form
+//          <order, generator> representing the fact that the group is Z_3 / order Z_3 generated
+//          by generator.
+//          The first of the pair is for the MF0(2) factor, and the second part is for the MF factor.
 Homology := function(weight)
     debugLog("HOMOLOGY: Calculating wq");
     space := ModularForms(2, weight);
@@ -315,56 +323,25 @@ Homology := function(weight)
     S2, _, _ := SmithForm(M2);
     S2 := ChangeRing(S2, Rationals());
 
-    rows1 := NumberOfRows(S1);
-    cols1 := NumberOfColumns(S1);
-    min_dim1 := Minimum([rows1, cols1]);
+    l1 := SNFToOrdersAndBasis(S1, kerBasis);
+    l2 := SNFToOrdersAndBasis(S2, psidBasis);
+    
+    l1Filtered := [];
+    l2Filtered := [];
 
-    rows2 := NumberOfRows(S2);
-    cols2 := NumberOfColumns(S2);
-    min_dim2 := Minimum([rows2, cols2]);
-
-    orders1 := [S1[i,i] : i in [1 .. min_dim1]];
-    str1 := "";
-
-    orders2 := [S2[i,i] : i in [1 .. min_dim2]];
-    str2 := "";
-
-    debugLog("HOMOLOGY: Parsing group orders");
-    for order in orders1 do
-        order_int := Truncate(order);
-        if order_int eq 0 then
-            str1 := str1 cat "Z_3 x ";
-        elif order_int ne 1 then
-            str1 := str1 cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
+    for pair in l1 do
+        order := pair[1];
+        if order ne 1 then
+            Append(~l1Filtered, pair);
         end if;
     end for;
 
-    if str1 eq "" then
-        str1 := "{e}";
-    else
-        len1 := #str1;
-        str1 := str1[1 .. len1-3];
-    end if;
-
-    str1 := "(" cat str1 cat ")";
-
-    for order in orders2 do
-        order_int := Truncate(order);
-        if order_int eq 0 then
-            str2 := str2 cat "Z_3 x ";
-        elif order_int ne 1 then
-            str2 := str2 cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
+    for pair in l2 do
+        order := pair[1];
+        if order ne 1 then
+            Append(~l2Filtered, pair);
         end if;
     end for;
 
-    if str2 eq "" then
-        str2 := "{e}";
-    else
-        len2 := #str2;
-        str2 := str2[1 .. len2-3];
-    end if;
-
-    str2 := "(" cat str2 cat ")";
-
-    return str1 cat " x " cat str2;
+    return l1Filtered, l2Filtered;
 end function;

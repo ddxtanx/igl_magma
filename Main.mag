@@ -243,8 +243,49 @@ end for;
 
 
 for w in [4 .. 500 by 2] do
-    space := ModularForms(2, w);
-    wq := get_Wq(space, 2);
+    HMF02, HMF := Homology(w);
 
-    "Homology at weight " cat IntegerToString(w) cat " is " cat Homology(w);
+    orders1 := [pair[1] : pair in HMF02];
+    orders2 := [pair[1] : pair in HMF];
+
+    str1 := "";
+    str2 := "";
+
+    for order in orders1 do
+        order_int := Truncate(order);
+        if order_int eq 0 then
+            str1 := str1 cat "Z_3 x ";
+        elif order_int ne 1 then
+            str1 := str1 cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
+        end if;
+    end for;
+
+    if str1 eq "" then
+        str1 := "{e}";
+    else
+        len1 := #str1;
+        str1 := str1[1 .. len1-3];
+    end if;
+
+    str1 := "(" cat str1 cat ")";
+
+    for order in orders2 do
+        order_int := Truncate(order);
+        if order_int eq 0 then
+            str2 := str2 cat "Z_3 x ";
+        elif order_int ne 1 then
+            str2 := str2 cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
+        end if;
+    end for;
+
+    if str2 eq "" then
+        str2 := "{e}";
+    else
+        len2 := #str2;
+        str2 := str2[1 .. len2-3];
+    end if;
+
+    str2 := "(" cat str2 cat ")";
+
+    "Homology at weight " cat IntegerToString(w) cat ": " cat str1 cat " x " cat str2;
 end for;

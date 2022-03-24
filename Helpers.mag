@@ -5,3 +5,15 @@ debugLog := procedure(str)
         str;
     end if;
 end procedure;
+
+
+SNFToOrdersAndBasis := function(snf, basis) 
+    dim := #basis;
+
+    orderAndBasis := [];
+    for i in [1 .. dim] do
+        Append(~orderAndBasis, <snf[i,i], basis[i]>);
+    end for;
+
+    return orderAndBasis;
+end function;
