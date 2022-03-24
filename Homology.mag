@@ -33,7 +33,7 @@ KernelMatrix := function(weight, ring : wq := -1)
     //"Computed Basis";
     dim := #basis;
     //"Computed Dimension";
-    half_weight := ring ! Truncate(2^(weight/2));
+    half_weight := ring ! (2^(Truncate(weight/2)));
     //"Computed Half Weight";
     power_weight := ring ! half_weight*half_weight;
     //"Computed Weight";
@@ -275,22 +275,32 @@ end function;
 // Denom seq for c4tilde powers: 1, 17, 91, 4369, 1271, 13981
 
 ImageBasis := function(weight : wq := -1)
+    debugLog("IMAGE: Computing C4C6 Basis");
     basis := ComputeC4C6Basis(weight);
     power := Truncate(weight/2);
     coef := 1;
+    debugLog("IMAGE: Computing Psi - 1 of basis");
     psi_minus := [coef*(Psi(f : wq := wq) - f) : f in basis];
     return psi_minus;
 end function;
 
-Homology := function(weight : wq := -1)
-    kerBasis := Ker(weight, pAdicRing(3) : wq := -1);
-    imBasis := ImageBasis(weight : wq := -1);
+Homology := function(weight)
+    debugLog("HOMOLOGY: Calculating wq");
+    space := ModularForms(2, weight);
+    wq := get_Wq(space, 2);
+    debugLog("HOMOLOGY: Calculating kernel basis");
+    kerBasis := Ker(weight, pAdicRing(3) : wq := wq);
 
+    debugLog("HOMOLOGY: Calculating image basis");
+    imBasis := ImageBasis(weight : wq := wq);
+
+    debugLog("HOMOLOGY: Calculating COB Matrix");
     M := ChangeOfBasis(kerBasis, imBasis);
      
     R := pAdicRing(3);
     M := ChangeRing(M, R);
 
+    debugLog("HOMOLOGY: Calculating SNF of COB Mat");
     S, _, _ := SmithForm(M);
     S := ChangeRing(S, Rationals());
 
@@ -301,12 +311,13 @@ Homology := function(weight : wq := -1)
     orders := [S[i,i] : i in [1 .. min_dim]];
     str := "";
 
+    debugLog("HOMOLOGY: Parsing group orders");
     for order in orders do
         order_int := Truncate(order);
         if order_int eq 0 then
-            str := str cat "Z x ";
+            str := str cat "Z_3 x ";
         elif order_int ne 1 then
-            str := str cat "Z/" cat IntegerToString(order_int) cat "Z x ";
+            str := str cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
         end if;
     end for;
 

@@ -136,9 +136,7 @@ ComputeC4C6Basis := function(weight)
             end if;
             debugLog("COMPUTE: Multiplying forms");
             form := fac_1 * fac_2 * fac_3;
-            smallestCoef := LeadingCoefficient(qExpansion(form));
-            formScaled := (1/smallestCoef) * form;
-            basis := Append(basis, formScaled);
+            basis := Append(basis, form);
         end for;
     end for;
     return basis;
@@ -174,10 +172,4 @@ TwistMultPower := function(f, i : wq := -1)
         temp_f := TwistMult(f, temp_f : wq := wq);
     end for;
     return temp_f;
-end function;
-
-NormalizeForm := function(f)
-    leadingCoef := LeadingCoefficient(qExpansion(f));
-    leadingCoef;
-    return f/leadingCoef;
 end function;
