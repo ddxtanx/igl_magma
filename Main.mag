@@ -241,7 +241,6 @@ for w in [4 .. 500 by 2] do
     "---";
 end for;
 
-
 for w in [4 .. 500 by 2] do
     HMF02, HMF := Homology(w);
 

@@ -39,6 +39,9 @@ ChangeOfBasis := function(basis1, basis2)
 end function;
 
 TransformBasis := function(matrix, basis)
+    if NumberOfColumns(matrix) ne #basis then
+        error Error("TransformBasis called on matrix and vector w/ incompatible dimensions");
+    end if;
     new_basis := [];
 
     rows := NumberOfRows(matrix);

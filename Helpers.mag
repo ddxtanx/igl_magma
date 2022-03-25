@@ -16,7 +16,7 @@ SNFToOrdersAndBasis := function(M, basis)
 
     orderAndBasis := [];
 
-    snfBasis := TransformBasis(Q, basis);
+    snfBasis := TransformBasis(Transpose(Q), basis);
     for i in [1 .. dim] do
     order := Truncate(Rationals() ! S[i,i]);
         Append(~orderAndBasis, <order, snfBasis[i]>);

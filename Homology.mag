@@ -24,8 +24,8 @@ import "ModularForms.mag":
     PsiDP1Inv,
     NormalizeForm;
 
-// This computes the relations matrix for something to be in the kernel of (psis - 1 + phif)
-KernelMatrix := function(weight, ring : wq := -1)
+// This computes the relations matrix for something to be in the kernel of (psid + 1 - phif)
+KernelMatrix := function(weight : wq := -1)
     //"Computed M_" cat IntegerToString(weight) cat "(Gamma_0(2)) Space";
     FormSpace := BaseExtend(ModularForms(2,weight), Rationals());
     debugLog("KERMAT: Computing basis");
@@ -33,9 +33,9 @@ KernelMatrix := function(weight, ring : wq := -1)
     //"Computed Basis";
     dim := #basis;
     //"Computed Dimension";
-    half_weight := ring ! (2^(Truncate(weight/2)));
+    half_weight := (2^(Truncate(weight/2)));
     //"Computed Half Weight";
-    power_weight := ring ! half_weight*half_weight;
+    power_weight := half_weight*half_weight;
     //"Computed Weight";
     //This computation of the dual basis takes the longest amount of time!
     debugLog("KERMAT: Getting WQ");
@@ -47,7 +47,7 @@ KernelMatrix := function(weight, ring : wq := -1)
     //dual_basis := [];
 
     //"Computed dual of the basis!";
-    CoefRing := PolynomialRing(ring, dim); // Coefficient ring for x1 ... xDim
+    CoefRing := PolynomialRing(Integers(), dim); // Coefficient ring for x1 ... xDim
     //AssignNames(~CoefRing, CreateBasisString(dim));
     eqns := [];
 
@@ -79,22 +79,6 @@ KernelMatrix := function(weight, ring : wq := -1)
                             - i2th_coef_f_dual)
                             + ith_coef_f_dual); 
             // This represents x_i * (the constraining equation applied to (q2q4)_n at the i'th q expansion coefficient)
-            /*if i eq 1 then
-                "The " cat IntegerToString(n) cat "th basis element:";
-                f_n;
-                "The first coef of the " cat IntegerToString(n) cat "th basis element:";
-                ith_coef_f;
-                "The second coef of the " cat IntegerToString(n) cat "th basis element:";
-                i2th_coef_f;
-                "The " cat IntegerToString(n) cat "th basis element dual:";
-                dual_f_n;
-                "The first coef of the " cat IntegerToString(n) cat "th basis element dual:";
-                ith_coef_f_dual;
-                "The second coef of the " cat IntegerToString(n) cat "th basis element dual:";
-                i2th_coef_f_dual;
-                "The " cat IntegerToString(n) cat "th expr:";
-                sub_expr;
-            end if;*/
             expr := expr + sub_expr; // Build the expression up as a sum
         end for;
         eqns := Append(eqns, expr); // Once the expression is built up, add it to the matrix
@@ -109,7 +93,7 @@ KernelMatrix := function(weight, ring : wq := -1)
         for i in [1 .. dim] do
             var := CoefRing.i;
             coef := LeadingCoefficient(Coefficient(eqn, var, 1));
-            coefs := Append(coefs, ring ! coef);
+            coefs := Append(coefs, coef);
         end for;
         mat_list := Append(mat_list, coefs);
     end for;
@@ -118,90 +102,20 @@ KernelMatrix := function(weight, ring : wq := -1)
 end function;
 
 // This returns the basis for the Kernel at the given weight
-// i.e. a matrix s.t. the columns give the coefficients (in the 
-// Q2Q4 basis for the given weight) of the elements that span the kernel
-Ker := function(weight, ring : wq := -1) 
+Ker := function(weight : wq := -1) 
     debugLog("KER: Computing Kernel Matrix");
-    mat := KernelMatrix(weight, ring : wq := wq);
-    debugLog("KER: Computing SNF");
-    S, P, Q := SmithForm(mat); // The smith form of the relation matrix gives a canonical way to view this kernel
-    // To find the kernel, we extract all of the columns of the Q matrix that
-    // Correspond to a zero invariant factor in the SNF matrix, which represents
-    // The basis matrix of the kernel
-    i := 1;
-    diagElems := [];
-    debugLog("KER: Getting Diag Elems");
-    // The following parses the invariant factors into a nice list
-    for row in RowSequence(S) do
-        diagElem := row[i];
-        diagElems := Append(diagElems, row[i]);
-        i := i+1;
-    end for;
-    debugLog("KER: Getting nonzero vecs");
-    // Now it searches for the first index where the invariant factor is zero
-    first0Index := 1;
-    while diagElems[first0Index] ne 0 do
-        first0Index := 1 + first0Index;
-    end while;
-    // We take out common factors to make the basis as simple as possible
-    qiScale := Q;
-    debugLog("KER: Returning submatrix");
-    dim := NumberOfRows(qiScale);
-    // We extract the columns corresponding to zero invariant factors
-    submat := Submatrix(qiScale, 1, first0Index, dim, (dim - first0Index+1));
-    // We take the column-echelon form of the basis matrix which 
-    // ensures that the basis returned is linearly independent.
-    R := loc<Integers() | 3>;
-    submat := ChangeRing(submat, R);
-    submatT := Transpose(EchelonForm(Transpose(submat)));
-    submat := ChangeRing(submat, ring);
-    // We get the basis that submat is w.r.t
-    debugLog("KER: Computing Q2Q4 Basis");
+    mat := KernelMatrix(weight : wq := wq);
     basis := ComputeQ2Q4Basis(weight);
-    if Sprint(BaseRing(basis[1])) ne Sprint(ring) then
-        RFS, phi := BaseExtend(Parent(basis[1]), ring);
-        basis := [phi(f) : f in basis];
-    end if;
-    kernel_basis := TransformBasis(Transpose(submat), basis);
-    // const_terms := [];
-    // // We now combine the kernel basis with the canonical basis to get 
-    // // the basis of forms for the kernel
-    // debugLog("KER: Expanding Ker Computation");
-    // for i in [1 .. NumberOfColumns(submat)] do
-    //     ithCol := ColumnSubmatrix(submat, i, 1);
-    //     form := (Parent(basis[1]) ! 0); 
-    //     const_term := 0;
-    //     debugLog("KER: Adding forms");
-    //     for j in [1 .. NumberOfRows(ithCol)] do
-    //         form := form + basis[j]*ithCol[j][1];
-    //         const_term := const_term + ithCol[j][1];
-    //     end for;
-    //     // There's a nice congruence that all of the forms in 
-    //     // the q2q4 basis have their non-constant terms divisible by 4
-    //     // so if the constant term of the form is divisible by 4
-    //     // then the whole modular form is divisible by 4
-    //     if Numerator(Rationals() ! const_term) mod 4 eq 0 then
-    //         form := 1/4 * form;
-    //     end if;
-    //     if form eq (Parent(form) ! 0) then
-    //         continue;
-    //     end if;
-    //     Append(~kernel_basis, form);
-    //     Append(~const_terms, const_term);
-    // end for;
-    // // We return the matrix basis as well as the basis of modular forms
-    // // debugLog("KER: Computing linearly independent subset");
-    // // debugLog("KER: Computing COB");
-    // // M := ChangeOfBasis(basis, kernel_basis);
-    // // debugLog("KER: Computing Echelon form");
-    // // EF := EchelonForm(M);
-    // // actual_basis := [];
-    // // for n in [1 .. NumberOfRows(EF)] do
-    // //     if NumberOfNonZeroEntries(RowSubmatrix(EF, n, 1)) ne 0 then
-    // //         Append(~actual_basis, kernel_basis[n]);
-    // //     end if;
-    // // end for;
-    return kernel_basis;
+
+    snfBasis := SNFToOrdersAndBasis(mat, basis);
+    kerBasis := [];
+    for pair in snfBasis do
+        order := pair[1];
+        if order eq 0 then
+            Append(~kerBasis, pair[2]);
+        end if;
+    end for;
+    return kerBasis;
 end function;
 
 //c4 = 16*(q2^2 - 3 q4) = E4!!!
@@ -298,7 +212,7 @@ Homology := function(weight)
     space := ModularForms(2, weight);
     wq := get_Wq(space, 2);
     debugLog("HOMOLOGY: Calculating kernel basis");
-    kerBasis := Ker(weight, pAdicRing(3) : wq := wq);
+    kerBasis := Ker(weight : wq := wq);
     psidBasis := [];
     for f in kerBasis do
         Append(~psidBasis, Psi(f : wq := wq) + f);
@@ -317,11 +231,6 @@ Homology := function(weight)
     M2 := ChangeRing(M2, R);
 
     debugLog("HOMOLOGY: Calculating SNF of COB Mat");
-    S1, _, _ := SmithForm(M1);
-    S1 := ChangeRing(S1, Rationals());
-
-    S2, _, _ := SmithForm(M2);
-    S2 := ChangeRing(S2, Rationals());
 
     l1 := SNFToOrdersAndBasis(M1, kerBasis);
     l2 := SNFToOrdersAndBasis(M2, psidBasis);
@@ -331,15 +240,23 @@ Homology := function(weight)
 
     for pair in l1 do
         order := pair[1];
+        form := pair[2];
         if order ne 1 then
-            Append(~l1Filtered, pair);
+            lc := LeadingCoefficient(qExpansion(form));
+            lc := lc / 3^(Valuation(pAdicRing(3) ! lc));
+            form := form/lc;
+            Append(~l1Filtered, <order, form>);
         end if;
     end for;
 
     for pair in l2 do
         order := pair[1];
+        form := pair[2];
         if order ne 1 then
-            Append(~l2Filtered, pair);
+            lc := LeadingCoefficient(qExpansion(form));
+            lc := lc / 3^(Valuation(pAdicRing(3) ! lc));
+            form := form/lc;
+            Append(~l2Filtered, <order, form>);
         end if;
     end for;
 
