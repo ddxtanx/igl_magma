@@ -22,7 +22,8 @@ import "ModularForms.mag":
     c6,
     IsModular,
     PsiDP1Inv,
-    NormalizeForm;
+    NormalizeForm,
+    NormalizeFormWOThree;
 
 // This computes the relations matrix for something to be in the kernel of (psid + 1 - phif)
 KernelMatrix := function(weight : wq := -1)
@@ -105,6 +106,7 @@ end function;
 Ker := function(weight : wq := -1) 
     debugLog("KER: Computing Kernel Matrix");
     mat := KernelMatrix(weight : wq := wq);
+    mat := ChangeRing(mat, pAdicRing(3));
     basis := ComputeQ2Q4Basis(weight);
 
     snfBasis := SNFToOrdersAndBasis(mat, basis);
@@ -242,9 +244,7 @@ Homology := function(weight)
         order := pair[1];
         form := pair[2];
         if order ne 1 then
-            lc := LeadingCoefficient(qExpansion(form));
-            lc := lc / 3^(Valuation(pAdicRing(3) ! lc));
-            form := form/lc;
+            form := NormalizeFormWOThree(form);
             Append(~l1Filtered, <order, form>);
         end if;
     end for;
@@ -253,9 +253,7 @@ Homology := function(weight)
         order := pair[1];
         form := pair[2];
         if order ne 1 then
-            lc := LeadingCoefficient(qExpansion(form));
-            lc := lc / 3^(Valuation(pAdicRing(3) ! lc));
-            form := form/lc;
+            form := NormalizeFormWOThree(form);
             Append(~l2Filtered, <order, form>);
         end if;
     end for;

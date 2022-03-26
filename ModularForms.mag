@@ -85,7 +85,7 @@ ComputeQ2Q4Basis := function(weight)
                 fac_2 := q4^k;
             end if;
             debugLog("COMPUTE: Multiplying forms");
-            form := fac_1 * fac_2;
+            form := 2^i * 16 ^ k * fac_1 * fac_2;
             smallestCoef := LeadingCoefficient(qExpansion(form));
             formScaled := (1/smallestCoef) * form;
             basis := Append(basis, formScaled);
@@ -172,4 +172,13 @@ TwistMultPower := function(f, i : wq := -1)
         temp_f := TwistMult(f, temp_f : wq := wq);
     end for;
     return temp_f;
+end function;
+
+NormalizeFormWOThree := function(f)
+    f := f * Denominator(LeadingCoefficient(qExpansion(f))) * Sign(LeadingCoefficient(qExpansion(f)));
+    coefs := [Integers() ! Coefficient(f, i) : i in [0 .. 11]];
+    gcf := GCD(coefs);
+    gcf := Rationals() ! gcf;
+    gcf := gcf / 3^(Valuation(pAdicRing(3) ! gcf));
+    return f/gcf;
 end function;
