@@ -106,7 +106,7 @@ end function;
 Ker := function(weight : wq := -1) 
     debugLog("KER: Computing Kernel Matrix");
     mat := KernelMatrix(weight : wq := wq);
-    mat := ChangeRing(mat, pAdicRing(3));
+    mat := ChangeRing(mat, loc<Integers() | 3>);
     basis := ComputeQ2Q4Basis(weight);
 
     snfBasis := SNFToOrdersAndBasis(mat, basis);
@@ -228,7 +228,7 @@ Homology := function(weight)
     M1 := ChangeOfBasis(kerBasis, imBasis1);
     M2 := ChangeOfBasis(psidBasis, imBasis2);
      
-    R := pAdicRing(3);
+    R := loc<Integers() | 3>;
     M1 := ChangeRing(M1, R);
     M2 := ChangeRing(M2, R);
 

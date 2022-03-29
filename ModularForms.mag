@@ -176,9 +176,11 @@ end function;
 
 NormalizeFormWOThree := function(f)
     f := f * Denominator(LeadingCoefficient(qExpansion(f))) * Sign(LeadingCoefficient(qExpansion(f)));
-    coefs := [Integers() ! Coefficient(f, i) : i in [0 .. 11]];
-    gcf := GCD(coefs);
-    gcf := Rationals() ! gcf;
+    nums := [Numerator(Coefficient(f, i)) : i in [0 .. 11]];
+    denoms := [Denominator(Coefficient(f,i)) : i in [0 .. 11]];
+    gcf := GCD(nums);
+    lcm := LCM(denoms);
+    gcf := Rationals() ! (gcf/lcm);
     gcf := gcf / 3^(Valuation(pAdicRing(3) ! gcf));
     return f/gcf;
 end function;

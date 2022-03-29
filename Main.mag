@@ -23,8 +23,8 @@ import "ModularForms.mag":
     c4,
     c6,
     IsModular,
-    PsiDP1Inv;
-
+    PsiDP1Inv,
+    NormalizeFormWOThree;
 import "Homology.mag":
     Ker,
     KernelMatrix,
@@ -32,7 +32,7 @@ import "Homology.mag":
     InKer,
     Homology,
     ImageBasis;
-c4tilde := PsiDP1Inv(c4);
+/*c4tilde := PsiDP1Inv(c4);
 c6tilde := PsiDP1Inv(c6);
 str := "";
 for weight in [4 .. 100 by 2] do
@@ -209,39 +209,48 @@ for i in [2 .. 300] do
 end for;
 
 for w in [4 .. 500 by 2] do
-    b1 := Ker(w, Rationals());
+    b1 := Ker(w);
     b2 := KernelSubBasis(w);
+    #b1;
+    #b2;
 
     cob := ChangeOfBasis(b1, b2);
-    det := Determinant(cob);
+    det := Rationals() ! Determinant(cob);
 
-    Valuation(pAdicRing(3) ! Denominator(det));
-end for;
+    Valuation(pAdicRing(3) ! det);
+end for;*/
 
 
 for w in [4 .. 500 by 2] do
     "Weight: " cat IntegerToString(w);
     space := ModularForms(2, w);
     wq := get_Wq(space, 2);
-    b1 := Ker(w, Rationals() : wq := wq);
+    b1 := Ker(w : wq := wq);
     psid_appl := [Psi(f : wq := wq) + f : f in b1];
     
     c4c6_basis := ComputeC4C6Basis(w);
     cob := ChangeOfBasis(c4c6_basis, psid_appl);
-    psid_appl;
     "---";
     "COB Matrix from c4c6 to psid";
     cob;
-    new_b1_modular := TransformBasis(cob, c4c6_basis);
-    "Modular Basis";
-    new_b1_modular;
-    "Kernel Basis";
-    new_b1 := [PsiDP1Inv(f: wq := wq) : f in new_b1_modular];
-    new_b1;
+    "-";
+    "Smith Form of COB";
+    S, P, Q := SmithForm(cob);
+    "S: ";
+    S;
+    "P: ";
+    P;
+    "Q: ";
+    Q;
+    "-";
+    "New Modular Forms Basis:";
+    new_c4c6_basis := TransformBasis(Q^(-1), c4c6_basis);
+    new_c4c6_basis := [NormalizeFormWOThree(f) : f in new_c4c6_basis];
+    new_c4c6_basis;
     "---";
 end for;
 
-for w in [4 .. 500 by 2] do
+/*for w in [4 .. 500 by 2] do
     HMF02, HMF := Homology(w);
 
     orders1 := [pair[1] : pair in HMF02];
@@ -287,4 +296,4 @@ for w in [4 .. 500 by 2] do
     str2 := "(" cat str2 cat ")";
 
     "Homology at weight " cat IntegerToString(w) cat ": " cat str1 cat " x " cat str2;
-end for;
+end for;*/

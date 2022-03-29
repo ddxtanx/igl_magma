@@ -1,8 +1,11 @@
+import "ModularForms.mag":
+    IsModular;
+
 import "Helpers.mag":
     debugLog;
 
 BasisExpand := function(form, basis)
-    ring := pAdicRing(3);
+    ring := loc<Integers() | 3>;
     num_basis := #basis;
 
     mat_elems := [];
