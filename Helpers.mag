@@ -12,10 +12,10 @@ end procedure;
 
 SNFToOrdersAndBasis := function(M, basis) 
     S, P, Q := SmithForm(M);
-    dim := #basis;
 
     orderAndBasis := [];
     snfBasis := TransformBasis(Transpose(Q), basis);
+    dim := Minimum([NumberOfColumns(S), NumberOfRows(S)]);
     for i in [1 .. dim] do
     order := Truncate(Rationals() ! S[i,i]);
         Append(~orderAndBasis, <order, snfBasis[i]>);

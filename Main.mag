@@ -31,7 +31,8 @@ import "Homology.mag":
     KernelSubBasis,
     InKer,
     Homology,
-    ImageBasis;
+    ImageBasis,
+    Coker;
 /*c4tilde := PsiDP1Inv(c4);
 c6tilde := PsiDP1Inv(c6);
 str := "";
@@ -297,3 +298,12 @@ end for;
 
     "Homology at weight " cat IntegerToString(w) cat ": " cat str1 cat " x " cat str2;
 end for;*/
+
+for w in [4 .. 500 by 2] do
+    homo := Homology(w);
+    coker := Coker(w);
+
+    if (homo[1] ne coker[1]) or (not InKer(coker[2])) then
+        w;
+    end if;
+end for;

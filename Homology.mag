@@ -194,11 +194,9 @@ ImageBasis := function(weight : wq := -1)
     debugLog("IMAGE: Computing C4C6 Basis");
     basis := ComputeC4C6Basis(weight);
     power := Truncate(weight/2);
-    coef := 1;
     debugLog("IMAGE: Computing Psi - 1 of basis");
-    psi_minus := [coef*(Psi(f : wq := wq) - f) : f in basis];
-    psi2 := [(2^(weight) - 1) * form : form in basis];
-    return psi_minus, psi2;
+    psi_minus := [(Psi(f : wq := wq) - f) : f in basis];
+    return psi_minus;
 end function;
 
 
@@ -221,24 +219,20 @@ Homology := function(weight)
     end for;
 
     debugLog("HOMOLOGY: Calculating image basis");
-    imBasis1, imBasis2 := ImageBasis(weight : wq := wq);
+    imBasis1 := ImageBasis(weight : wq := wq);
 
 
     debugLog("HOMOLOGY: Calculating COB Matrix");
     M1 := ChangeOfBasis(kerBasis, imBasis1);
-    M2 := ChangeOfBasis(psidBasis, imBasis2);
      
     R := loc<Integers() | 3>;
     M1 := ChangeRing(M1, R);
-    M2 := ChangeRing(M2, R);
 
     debugLog("HOMOLOGY: Calculating SNF of COB Mat");
 
     l1 := SNFToOrdersAndBasis(M1, kerBasis);
-    l2 := SNFToOrdersAndBasis(M2, psidBasis);
     
     l1Filtered := [];
-    l2Filtered := [];
 
     for pair in l1 do
         order := pair[1];
@@ -249,14 +243,31 @@ Homology := function(weight)
         end if;
     end for;
 
-    for pair in l2 do
+    return l1Filtered[1];
+end function;
+
+Coker := function(k : wq := -1)
+    B := ComputeQ2Q4Basis(k);
+    im := ImageBasis(k : wq := wq);
+
+    M1 := ChangeOfBasis(B, im);
+
+    R := loc<Integers() | 3>;
+    M1 := ChangeRing(M1, R);
+
+
+    l1 := SNFToOrdersAndBasis(M1, B);
+    
+    l1Filtered := [];
+
+    for pair in l1 do
         order := pair[1];
         form := pair[2];
         if order ne 1 then
             form := NormalizeFormWOThree(form);
-            Append(~l2Filtered, <order, form>);
+            Append(~l1Filtered, <order, form>);
         end if;
     end for;
 
-    return l1Filtered, l2Filtered;
+    return l1Filtered[1];
 end function;
