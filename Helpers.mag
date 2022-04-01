@@ -3,6 +3,7 @@ import "ModularFormLinearAlgebra.mag":
 
 debug := false;
 
+// Tool used to provide debug message if debug = true;
 debugLog := procedure(str)
     if debug then
         str;
@@ -10,6 +11,9 @@ debugLog := procedure(str)
 end procedure;
 
 
+//This function takes in a matrix M : V -> W and a basis of V
+//It returns a modified basis of V compatible with the smith normal form, as well as
+//the order related to the basis element in a pair
 SNFToOrdersAndBasis := function(M, basis) 
     S, P, Q := SmithForm(M);
 
@@ -22,4 +26,21 @@ SNFToOrdersAndBasis := function(M, basis)
     end for;
 
     return orderAndBasis;
+end function;
+
+
+// This returns the pAdicValuation of a number n without calling pAdicRing(3) ! which loses precision.
+function Val(n, p)
+    if n eq 0 then
+        return -1;
+    end if;
+    if Sprint(Parent(n)) eq "Rational Field" then
+        return Val(Numerator(n),p) - Val(Denominator(n),p); 
+    end if;
+    val := 0;
+    while (n mod p) eq 0 do
+        n := Truncate(n/p);
+        val := val + 1;
+    end while;
+    return val;
 end function;

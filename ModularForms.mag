@@ -4,7 +4,8 @@ import "/Applications/Magma/package/Geometry/ModFrm/operators.m":
             // super great!
 
 import "Helpers.mag":
-    debugLog;
+    debugLog,
+    Val;
 
 S2 := BaseExtend(ModularForms(2,2), Rationals());
 E22 := S2.1;
@@ -85,10 +86,8 @@ ComputeQ2Q4Basis := function(weight)
                 fac_2 := q4^k;
             end if;
             debugLog("COMPUTE: Multiplying forms");
-            form := 2^i * 16 ^ k * fac_1 * fac_2;
-            smallestCoef := LeadingCoefficient(qExpansion(form));
-            formScaled := (1/smallestCoef) * form;
-            basis := Append(basis, formScaled);
+            form := fac_1 * fac_2;
+            basis := Append(basis, form);
     end for;
     return basis;
 end function;
@@ -181,6 +180,6 @@ NormalizeFormWOThree := function(f)
     gcf := GCD(nums);
     lcm := LCM(denoms);
     gcf := Rationals() ! (gcf/lcm);
-    gcf := gcf / 3^(Valuation(pAdicRing(3) ! gcf));
+    gcf := gcf / 3^Val(gcf,3);
     return f/gcf;
 end function;

@@ -207,10 +207,12 @@ end function;
 //          <order, generator> representing the fact that the group is Z_3 / order Z_3 generated
 //          by generator.
 //          The first of the pair is for the MF0(2) factor, and the second part is for the MF factor.
-Homology := function(weight)
-    debugLog("HOMOLOGY: Calculating wq");
-    space := ModularForms(2, weight);
-    wq := get_Wq(space, 2);
+Homology := function(weight : wq := -1)
+    if wq eq -1 then
+        debugLog("HOMOLOGY: Calculating wq");
+        space := ModularForms(2, weight);
+        wq := get_Wq(space, 2);
+    end if;
     debugLog("HOMOLOGY: Calculating kernel basis");
     kerBasis := Ker(weight : wq := wq);
     psidBasis := [];
@@ -270,4 +272,24 @@ Coker := function(k : wq := -1)
     end for;
 
     return l1Filtered[1];
+end function;
+
+function HomologyGenerator(w : wq := -1)
+    f := 1;
+    if w mod 4 eq 0 then
+        f := c4^(Truncate(w/4));
+    elif w mod 6 eq 0 then
+        f := c6^(Truncate(w/6));
+    elif w mod 6 eq 2 then
+        sixPow := Truncate(w/6)-1;
+        fac1 := 1;
+        if sixPow ne 0 then
+            fac1 := c6^sixPow;
+        end if;
+        f := fac1 * c4^2;
+    else
+        f := c6^(Truncate(w/6)) * c4;
+    end if;
+
+    return PsiDP1Inv(f : wq := wq);
 end function;
