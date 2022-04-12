@@ -48,7 +48,7 @@ KernelMatrix := function(weight : wq := -1)
     //dual_basis := [];
 
     //"Computed dual of the basis!";
-    CoefRing := PolynomialRing(Integers(), dim); // Coefficient ring for x1 ... xDim
+    CoefRing := PolynomialRing(loc<Integers() | 3>, dim); // Coefficient ring for x1 ... xDim
     //AssignNames(~CoefRing, CreateBasisString(dim));
     eqns := [];
 
@@ -190,7 +190,7 @@ KernelSubBasis := function(weight : wq := -1)
 end function;
 // Denom seq for c4tilde powers: 1, 17, 91, 4369, 1271, 13981
 
-ImageBasis := function(weight : wq := -1)
+H1ImageBasis := function(weight : wq := -1)
     debugLog("IMAGE: Computing C4C6 Basis");
     basis := ComputeC4C6Basis(weight);
     power := Truncate(weight/2);
@@ -221,7 +221,7 @@ Homology := function(weight : wq := -1)
     end for;
 
     debugLog("HOMOLOGY: Calculating image basis");
-    imBasis1 := ImageBasis(weight : wq := wq);
+    imBasis1 := H1ImageBasis(weight : wq := wq);
 
 
     debugLog("HOMOLOGY: Calculating COB Matrix");
@@ -234,44 +234,67 @@ Homology := function(weight : wq := -1)
 
     l1 := SNFToOrdersAndBasis(M1, kerBasis);
     
-    l1Filtered := [];
+    return l1;
+end function;
 
-    for pair in l1 do
-        order := pair[1];
-        form := pair[2];
-        if order ne 1 then
-            form := NormalizeFormWOThree(form);
-            Append(~l1Filtered, <order, form>);
+CokerImageBasis := function(k : wq := -1)
+    B1 := ComputeQ2Q4Basis(k);
+    B2 := ComputeC4C6Basis(k);
+
+    imageBasis := [];
+    for f in B1 do
+        Append(~imageBasis, Psi(f : wq := wq) + f);
+    end for;
+
+    for g in B2 do
+        Append(~imageBasis, g);
+    end for;
+
+    COB := ChangeOfBasis(B1, imageBasis);
+    COB := ChangeRing(COB, loc<Integers() | 3>);
+
+    EF := EchelonForm(COB);
+    indep_basis := [];
+
+    rows := NumberOfRows(EF);
+    cols := NumberOfColumns(EF);
+    dim := Minimum([rows, cols]);
+    for i in [1 .. dim] do
+        if EF[i,i] ne 0 then
+            Append(~indep_basis, imageBasis[i]);
         end if;
     end for;
 
-    return l1Filtered[1];
+    return indep_basis;
 end function;
 
 Coker := function(k : wq := -1)
-    B := ComputeQ2Q4Basis(k);
-    im := ImageBasis(k : wq := wq);
+    B1 := ComputeQ2Q4Basis(k);
+    B2 := CokerImageBasis(k);
 
-    M1 := ChangeOfBasis(B, im);
-
-    R := loc<Integers() | 3>;
-    M1 := ChangeRing(M1, R);
-
-
-    l1 := SNFToOrdersAndBasis(M1, B);
+    COB := ChangeOfBasis(B1, B2);
+    snf := SNFToOrdersAndBasis(COB, B1);
     
-    l1Filtered := [];
+    return snf;
+end function;
 
-    for pair in l1 do
-        order := pair[1];
-        form := pair[2];
-        if order ne 1 then
-            form := NormalizeFormWOThree(form);
-            Append(~l1Filtered, <order, form>);
-        end if;
-    end for;
+function ModPsiDP1(k : wq := -1)
+    B1 := ComputeQ2Q4Basis(k);
+    imageBasis := [Psi(f : wq := wq) + f : f in B1];
 
-    return l1Filtered[1];
+    COB := ChangeOfBasis(B1, imageBasis);
+
+    snf := SNFToOrdersAndBasis(COB, B1);
+    return snf;
+end function;
+
+function CokerImageModPsiDP1(k : wq := -1)
+    b1 := CokerImageBasis(k : wq := wq);
+    b2 := [Psi(f : wq := wq) + f : f in ComputeQ2Q4Basis(k)];
+
+    COB := ChangeOfBasis(b1, b2);
+
+    return SNFToOrdersAndBasis(COB, b1);
 end function;
 
 function HomologyGenerator(w : wq := -1)

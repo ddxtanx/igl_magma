@@ -28,6 +28,20 @@ SNFToOrdersAndBasis := function(M, basis)
     return orderAndBasis;
 end function;
 
+OrderAndBasisToGroupString := function(orderBasis : underlyingRing := "Z_3")
+    str := "";
+    for pair in orderBasis do
+        order := pair[1];
+        if order eq 0 then
+            str := str cat " " cat underlyingRing cat " x";
+        elif order ne 1 then
+            str := str cat " " cat underlyingRing cat " / " cat Sprint(order) cat " " cat underlyingRing cat " x";
+        end if;
+    end for;
+    
+    return str[1 .. #str-2];
+end function;
+
 
 // This returns the pAdicValuation of a number n without calling pAdicRing(3) ! which loses precision.
 function Val(n, p)

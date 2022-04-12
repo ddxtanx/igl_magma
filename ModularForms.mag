@@ -14,11 +14,11 @@ S4 := BaseExtend(ModularForms(2,4), Rationals());
 E4P := S4.1;
 EI4 := S4.2;
 
-q2 := 1/2 * E22;
+q2 := -1/2 * E22;
 q4 := 1/16*E4P - EI4;   
 
 c4 := 16*(q2^2 - 3*q4);
-c6 := 32*(9*q2*q4-2*q2^3);
+c6 := -32*(9*q2*q4-2*q2^3);
 Delta := q4^2 * (16*q2^2 - 64*q4);
 
 // Computes psi(f) for a given modular form
@@ -27,6 +27,9 @@ Delta := q4^2 * (16*q2^2 - 64*q4);
 Psi := function(form : wq := -1) // Pass in wq for memoization
     if Type(form) ne ModFrmElt then
         return form;
+    end if;
+    if Weight(form) eq 2 then
+        return -2*form;
     end if;
     debugLog("PSI: getting weight");
     weight := Weight(form); // Get the weight
