@@ -113,6 +113,7 @@ Ker := function(weight : wq := -1)
     kerBasis := [];
     for pair in snfBasis do
         order := pair[1];
+        //Only elements that vanish (i.e. in kernel) should be put into basis;
         if order eq 0 then
             Append(~kerBasis, pair[2]);
         end if;
@@ -120,13 +121,12 @@ Ker := function(weight : wq := -1)
     return kerBasis;
 end function;
 
-//c4 = 16*(q2^2 - 3 q4) = E4!!!
-//c6 = -64q2^3 +9*32*q2*q4 = 32*(9*q2*q4-2*q2^3) = E6!!!
-
+// Determines if an element is in the kernel by checking if Psi(f) + f is modular
 InKer := function(f : wq := -1)
     return IsModular(Psi(f : wq := wq)+f : wq := wq);
 end function;
 
+// Computes the (psi_d+1)^(-1)(c_ijk c4^i c6^j Delta^k) subbasis w/ me and Casey's work
 KernelSubBasis := function(weight : wq := -1)
     if wq eq -1 then
         space := ModularForms(2, weight);
@@ -190,7 +190,9 @@ KernelSubBasis := function(weight : wq := -1)
 end function;
 // Denom seq for c4tilde powers: 1, 17, 91, 4369, 1271, 13981
 
-H1ImageBasis := function(weight : wq := -1)
+// Computes the basis for the image of the map psi - 1: MF -> MF_0(2) 
+// This just applies psi-1 to every basis element of MF.
+PsiDM1Basis := function(weight : wq := -1)
     debugLog("IMAGE: Computing C4C6 Basis");
     basis := ComputeC4C6Basis(weight);
     power := Truncate(weight/2);
@@ -237,19 +239,26 @@ Homology := function(weight : wq := -1)
     return l1;
 end function;
 
+// This computes the basis of the image of the map \psi_d+1 - \phi f: MF_0(2) \oplus MF -> MF_0(2)
+// Again this just takes basis elements of the parts, applies the relevant maps, and joins them up in a single basis.
 CokerImageBasis := function(k : wq := -1)
     B1 := ComputeQ2Q4Basis(k);
     B2 := ComputeC4C6Basis(k);
 
     imageBasis := [];
     for f in B1 do
+        // First part is psi_d(f)+f for f in MF_0(2)
         Append(~imageBasis, Psi(f : wq := wq) + f);
     end for;
 
     for g in B2 do
+        // Second part is phi_f(g) = g for g in MF
         Append(~imageBasis, g);
     end for;
 
+
+    // The following code is just to make sure that the 
+    // basis given is not only spanning, but linearly independent.
     COB := ChangeOfBasis(B1, imageBasis);
     COB := ChangeRing(COB, loc<Integers() | 3>);
 
@@ -268,16 +277,18 @@ CokerImageBasis := function(k : wq := -1)
     return indep_basis;
 end function;
 
+// Computes MF_0(2)/(im psi + 1 - phi_f) at a weight k
 Coker := function(k : wq := -1)
     B1 := ComputeQ2Q4Basis(k);
     B2 := CokerImageBasis(k);
 
     COB := ChangeOfBasis(B1, B2);
     snf := SNFToOrdersAndBasis(COB, B1);
-    
+
     return snf;
 end function;
 
+// Computes MF_0(2) / (im psi_d+1) at weight k
 function ModPsiDP1(k : wq := -1)
     B1 := ComputeQ2Q4Basis(k);
     imageBasis := [Psi(f : wq := wq) + f : f in B1];
@@ -288,6 +299,7 @@ function ModPsiDP1(k : wq := -1)
     return snf;
 end function;
 
+// Computes (im psi_d+1 - \phi_f) / (im \psi_d+1).
 function CokerImageModPsiDP1(k : wq := -1)
     b1 := CokerImageBasis(k : wq := wq);
     b2 := [Psi(f : wq := wq) + f : f in ComputeQ2Q4Basis(k)];
@@ -297,6 +309,7 @@ function CokerImageModPsiDP1(k : wq := -1)
     return SNFToOrdersAndBasis(COB, b1);
 end function;
 
+// Returns the form that generates homology at a given weight w.
 function HomologyGenerator(w : wq := -1)
     f := 1;
     if w mod 4 eq 0 then
