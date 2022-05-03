@@ -4,8 +4,7 @@ import "ModularForms.mag":
 import "Helpers.mag":
     debugLog;
 
-BasisExpand := function(form, basis)
-    ring := loc<Integers() | 3>;
+BasisExpand := function(form, basis : ring := loc<Integers() | 3>)
     num_basis := #basis;
 
     mat_elems := [];
@@ -30,10 +29,10 @@ BasisExpand := function(form, basis)
     return Transpose(soln);
 end function;
 
-ChangeOfBasis := function(basis1, basis2)
+ChangeOfBasis := function(basis1, basis2 : ring := loc<Integers() | 3>)
     vecs := [];
     for form in basis2 do
-        cob := BasisExpand(form, basis1);
+        cob := BasisExpand(form, basis1 : ring := ring);
         vecs := Append(vecs, cob);
     end for;
 

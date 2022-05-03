@@ -13,7 +13,9 @@ import "Helpers.mag":
     FactorMatrixRows,
     EnsureNoColDivByThree,
     OrderAndBasisToGroupString,
-    Val;
+    SNFToOrdersAndBasis,
+    Val,
+    GenerateWQ;
 
 import "ModularForms.mag":
     Psi,
@@ -33,10 +35,13 @@ import "Homology.mag":
     KernelSubBasis,
     InKer,
     Homology,
-    H1ImageBasis,
+    PsiDM1Basis,
+    ModuloModular,
     Coker,
     ModPsiDP1,
-    CokerImageModPsiDP1;
+    CokerImageModPsiDP1,
+    CokerImageBasis,
+    CokerImageBasisConj;
 c4tilde := PsiDP1Inv(c4);
 c6tilde := PsiDP1Inv(c6);
 str := "";
@@ -223,7 +228,7 @@ for w in [4 .. 500 by 2] do
     det := Rationals() ! Determinant(cob);
 
     Valuation(pAdicRing(3) ! det);
-end for;*/
+end for;
 
 
 for w in [4 .. 500 by 2] do
@@ -375,32 +380,11 @@ for w in [4 .. 500 by 2] do
     PsiDP1Inv(f);
 end for;
 
-for w in [2 .. 500 by 2] do
+for w in [4 .. 500 by 2] do
     "Weight " cat IntegerToString(w) cat " Cokernel:";
     coker := Coker(w);
 
-    orders1 := [pair[1] : pair in coker];
-
-    str1 := "";
-
-    for order in orders1 do
-        order_int := Truncate(order);
-        if order_int eq 0 then
-            str1 := str1 cat "Z_3 x ";
-        elif order_int ne 1 then
-            str1 := str1 cat "Z_3/ " cat IntegerToString(order_int) cat " Z_3 x ";
-        end if;
-    end for;
-
-    if str1 eq "" then
-        str1 := "{e}";
-    else
-        len1 := #str1;
-        str1 := str1[1 .. len1-3];
-    end if;
-
-    str1 := "(" cat str1 cat ")";
-    str1;
+    OrderAndBasisToGroupString(coker : underlyingRing:="Z");
 end for;
 
 for w in [2 .. 500 by 2] do
@@ -421,4 +405,92 @@ for w in [2 .. 500 by 2] do
     orderVect := Matrix(orders);
     "Order vect weight: " cat Sprint(w);
     orderVect;
+end for;
+
+for w in [4 .. 500 by 2] do
+    "Weight: " cat Sprint(w);
+    wq := -1;
+    if w ne 2 then
+        space := ModularForms(2, w);
+        wq := get_Wq(space, 2);
+    end if;
+    coker := Coker(w : wq := wq);
+    coker_str := OrderAndBasisToGroupString(coker);
+    "Coker is: " cat coker_str;
+
+    top_fact := ModPsiDP1(w : wq := wq);
+    top_fact_str := OrderAndBasisToGroupString(top_fact);
+    "Top factor is: " cat top_fact_str;
+
+    bot_fact := CokerImageModPsiDP1(w : wq := wq);
+    bot_fact_str := OrderAndBasisToGroupString(bot_fact);
+    "Bottom factor is: " cat bot_fact_str; 
+
+    modulo_modular := ModuloModular(w);
+    modulo_modular_str := OrderAndBasisToGroupString(modulo_modular);
+    "Modulo Modular Part is: " cat modulo_modular_str;
+
+    product := coker_str cat " x " cat bot_fact_str;
+    "Product is: " cat product;
+    
+    if product ne top_fact_str and (bot_fact_str eq "{e}" and (top_fact_str ne coker_str)) then
+        "WEEWOOWEEWOO TROUBLE ALERT";
+    end if;
+end for;
+
+for w in [4 .. 500 by 2] do
+    Sprint(w) cat ": ";
+    b1 := ComputeQ2Q4Basis(w);
+    b2 := ComputeC4C6Basis(w);
+
+    COB := ChangeOfBasis(b1, b2);
+    S, P, Q := SmithForm(COB);
+
+    Q^(-1);
+end for;
+
+for w in [2 .. 500 by 2] do
+    c := Coker(w);
+    b1 := ComputeQ2Q4Basis(w);
+    b2 := ComputeC4C6Basis(w);
+    num := 0;
+
+    for pair in c do
+        if pair[1] ne 1 then
+            num := num + 1;
+        end if;
+    end for;
+
+    Sprint(w) cat ": " cat Sprint(num) cat ", " cat Sprint(#b1) cat ", " cat Sprint(#b2);
+end for;
+
+for w in [2 .. 500 by 2] do
+    "Weight: " cat Sprint(w);
+    b := ComputeQ2Q4Basis(w);
+
+    pow := Val(w, 3) + 1;
+    ring := quo<Integers() | 3^pow>;
+
+    matRow := [];
+    for i in [1 .. #b] do
+        if #matRow eq 0 then
+            Append(~matRow, 0);
+        else
+            Append(~matRow, 1);
+        end if;
+    end for;
+
+    matList := [matRow];
+    mat := Matrix(ring, matList);
+
+    S, P, Q := SmithForm(mat);
+    "Divisors: ";
+    S;
+    "COB: ";
+    Q;
+end for;
+
+for w in [4 .. 500 by 2] do
+    mm := ModuloModular(w);
+    OrderAndBasisToGroupString(mm : underlyingRing := "Z");
 end for;

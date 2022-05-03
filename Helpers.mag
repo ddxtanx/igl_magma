@@ -1,5 +1,12 @@
+import "/Applications/Magma/package/Geometry/ModFrm/operators.m":
+    get_Wq; // "Quick" computations of atkin lehner operators
+            // It's actually slow af, if we can speed this up that would be
+            // super great!
+            
 import "ModularFormLinearAlgebra.mag":
-    TransformBasis;
+    TransformBasis,
+    BasisExpand,
+    ChangeOfBasis;
 
 debug := false;
 
@@ -10,11 +17,17 @@ debugLog := procedure(str)
     end if;
 end procedure;
 
+GenerateWQ := function(w)
+    space := ModularForms(2, w);
+    wq := get_Wq(space, 2);
 
+    return wq;
+end function;
 //This function takes in a matrix M : V -> W and a basis of V
 //It returns a modified basis of V compatible with the smith normal form, as well as
 //the order related to the basis element in a pair
 SNFToOrdersAndBasis := function(M, basis) 
+    M := ChangeRing(M, loc<Integers() | 3>);
     S, P, Q := SmithForm(M);
 
     orderAndBasis := [];
@@ -23,6 +36,9 @@ SNFToOrdersAndBasis := function(M, basis)
     for i in [1 .. dim] do
     order := Truncate(Rationals() ! S[i,i]);
         Append(~orderAndBasis, <order, snfBasis[i]>);
+    end for;
+    for i in [dim + 1 .. #basis] do
+        Append(~orderAndBasis, <0, snfBasis[i]>);
     end for;
 
     return orderAndBasis;
@@ -38,8 +54,10 @@ OrderAndBasisToGroupString := function(orderBasis : underlyingRing := "Z_3")
             str := str cat " " cat underlyingRing cat " / " cat Sprint(order) cat " " cat underlyingRing cat " x";
         end if;
     end for;
-    
-    return str[1 .. #str-2];
+    if str eq "" then
+        return "{e}";
+    end if;
+    return str[2 .. #str-2];
 end function;
 
 
@@ -48,7 +66,8 @@ function Val(n, p)
     if n eq 0 then
         return -1;
     end if;
-    if Sprint(Parent(n)) eq "Rational Field" then
+    if "Rational Field" in Sprint(Parent(n)) then
+        n := Rationals() ! n;
         return Val(Numerator(n),p) - Val(Denominator(n),p); 
     end if;
     val := 0;
